@@ -1,7 +1,7 @@
 services:
-  1337:
+  "1337":
     build: .
-    container_name: "1337"
+    container_name: 1337
     restart: unless-stopped
     ports:
       - "5150:5000"
