@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Problems — 1337{% endblock %}
+{% block content %}
+
+<h1>NeetCode 150</h1>
+<p class="dim">Roadmap order. Mark a problem solved once you've done it cold, without watching a solution.</p>
+
+{% for category, rows in by_category.items() %}
+<section class="panel">
+    <h2>{{ category }}</h2>
+    <table class="problem-table">
+        <thead>
+            <tr><th>Problem</th><th>Difficulty</th><th>Status</th><th></th></tr>
+        </thead>
+        <tbody>
+            {% for p in rows %}
+            <tr>
+                <td><a href="{{ p.url }}" target="_blank" rel="noopener">{{ p.name }}</a></td>
+                <td><span class="diff diff-{{ p.difficulty|lower }}">{{ p.difficulty }}</span></td>
+                <td>
+                    {% if p.status == 'mastered' %}
+                        <span class="tag tag-mastered">mastered</span>
+                    {% elif p.status == 'reviewing' %}
+                        <span class="tag tag-reviewing">{{ stage_info[p.stage].label }} · next {{ p.next_review_at }}</span>
+                    {% else %}
+                        <span class="tag tag-new">not started</span>
+                    {% endif %}
+                </td>
+                <td class="actions">
+                    {% if p.status != 'mastered' %}
+                    <form method="post" action="{{ url_for('mark_solved', problem_id=p.id) }}">
+                        <button class="btn btn-good" type="submit">
+                            {{ 'Solved again' if p.status == 'reviewing' else 'Mark solved' }}
+                        </button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>
+{% endfor %}
+
+{% endblock %}

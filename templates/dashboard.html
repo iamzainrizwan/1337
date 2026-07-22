@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — 1337{% endblock %}
+{% block content %}
+
+<section class="stats-row">
+    <div class="stat-card">
+        <div class="stat-num">{{ mastered }}</div>
+        <div class="stat-label">mastered</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-num">{{ in_progress }}</div>
+        <div class="stat-label">in review cycle</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-num">{{ totals - mastered - in_progress }}</div>
+        <div class="stat-label">not started</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-num">{{ due|length }}</div>
+        <div class="stat-label">due today</div>
+    </div>
+</section>
+
+<section class="panel">
+    <h2>Due for review</h2>
+    {% if due %}
+    <table class="problem-table">
+        <thead>
+            <tr><th>Problem</th><th>Category</th><th>Stage</th><th>Was due</th><th></th></tr>
+        </thead>
+        <tbody>
+            {% for p in due %}
+            <tr>
+                <td><a href="{{ p.url }}" target="_blank" rel="noopener">{{ p.name }}</a> <span class="diff diff-{{ p.difficulty|lower }}">{{ p.difficulty }}</span></td>
+                <td>{{ p.category }}</td>
+                <td>{{ stage_info[p.stage].label }}</td>
+                <td>{{ p.next_review_at }}{% if p.next_review_at < today %}<span class="overdue">overdue</span>{% endif %}</td>
+                <td class="actions">
+                    <form method="post" action="{{ url_for('complete_review', problem_id=p.id, action='done') }}">
+                        <button class="btn btn-good" type="submit">Solved it</button>
+                    </form>
+                    <form method="post" action="{{ url_for('complete_review', problem_id=p.id, action='struggled') }}">
+                        <button class="btn btn-warn" type="submit">Struggled</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="empty">Nothing due today. Go solve something new from the <a href="{{ url_for('problem_list') }}">problem list</a>.</p>
+    {% endif %}
+</section>
+
+<section class="panel">
+    <h2>Upcoming</h2>
+    {% if upcoming %}
+    <ul class="upcoming-list">
+        {% for p in upcoming %}
+        <li><span class="upcoming-date">{{ p.next_review_at }}</span> {{ p.name }} <span class="dim">({{ stage_info[p.stage].label }})</span></li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p class="empty">No reviews scheduled yet.</p>
+    {% endif %}
+</section>
+
+<section class="panel">
+    <h2>Progress by category</h2>
+    <div class="category-grid">
+        {% for c in categories %}
+        <div class="category-bar">
+            <div class="category-label">{{ c.category }}</div>
+            <div class="bar-track">
+                <div class="bar-fill" style="width: {{ ((c.mastered or 0) / c.total * 100)|round(0) }}%"></div>
+            </div>
+            <div class="category-count">{{ c.mastered or 0 }}/{{ c.total }}</div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+{% endblock %}
