@@ -1,5 +1,5 @@
 services:
-  1337:
+  "1337":
     build: .
     container_name: 1337
     restart: unless-stopped

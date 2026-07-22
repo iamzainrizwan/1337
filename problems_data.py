@@ -1,7 +1,13 @@
-# NeetCode 150, grouped by roadmap category in recommended order.
-# Source: neetcode.io/roadmap category ordering.
+# NeetCode 250, grouped by neetcode.io category (roadmap order).
+# This is NeetCode 150 plus the additional ~100 problems. Categorized and
+# cross-checked against the per-category totals published on neetcode.io's
+# NeetCode 250 practice page. A couple of judgment calls were needed where
+# NeetCode doesn't publish a raw problem-by-problem list -- if you spot a
+# mismatch against the live roadmap, it's easiest to just edit this file
+# directly and re-deploy; existing progress is matched by LeetCode URL, so
+# reordering or tweaking entries here won't wipe your review history.
 
-NEETCODE_150 = [
+NEETCODE_250 = [
     ("Arrays & Hashing", [
         ("Contains Duplicate", "Easy", "https://leetcode.com/problems/contains-duplicate/"),
         ("Valid Anagram", "Easy", "https://leetcode.com/problems/valid-anagram/"),
@@ -12,6 +18,19 @@ NEETCODE_150 = [
         ("Valid Sudoku", "Medium", "https://leetcode.com/problems/valid-sudoku/"),
         ("Encode and Decode Strings", "Medium", "https://leetcode.com/problems/encode-and-decode-strings/"),
         ("Longest Consecutive Sequence", "Medium", "https://leetcode.com/problems/longest-consecutive-sequence/"),
+        ("Concatenation of Array", "Easy", "https://leetcode.com/problems/concatenation-of-array/"),
+        ("Sort an Array", "Medium", "https://leetcode.com/problems/sort-an-array/"),
+        ("Longest Common Prefix", "Easy", "https://leetcode.com/problems/longest-common-prefix/"),
+        ("Remove Element", "Easy", "https://leetcode.com/problems/remove-element/"),
+        ("Majority Element", "Easy", "https://leetcode.com/problems/majority-element/"),
+        ("Sort Colors", "Medium", "https://leetcode.com/problems/sort-colors/"),
+        ("Design HashSet", "Easy", "https://leetcode.com/problems/design-hashset/"),
+        ("Design HashMap", "Easy", "https://leetcode.com/problems/design-hashmap/"),
+        ("Range Sum Query 2D - Immutable", "Medium", "https://leetcode.com/problems/range-sum-query-2d-immutable/"),
+        ("Best Time to Buy and Sell Stock II", "Medium", "https://leetcode.com/problems/best-time-to-buy-and-sell-stock-ii/"),
+        ("Majority Element II", "Medium", "https://leetcode.com/problems/majority-element-ii"),
+        ("Subarray Sum Equals K", "Medium", "https://leetcode.com/problems/subarray-sum-equals-k/"),
+        ("First Missing Positive", "Hard", "https://leetcode.com/problems/first-missing-positive/"),
     ]),
     ("Two Pointers", [
         ("Valid Palindrome", "Easy", "https://leetcode.com/problems/valid-palindrome/"),
@@ -19,6 +38,14 @@ NEETCODE_150 = [
         ("3Sum", "Medium", "https://leetcode.com/problems/3sum/"),
         ("Container With Most Water", "Medium", "https://leetcode.com/problems/container-with-most-water/"),
         ("Trapping Rain Water", "Hard", "https://leetcode.com/problems/trapping-rain-water/"),
+        ("Reverse String", "Easy", "https://leetcode.com/problems/reverse-string/"),
+        ("Valid Palindrome II", "Easy", "https://leetcode.com/problems/valid-palindrome-ii/"),
+        ("4Sum", "Medium", "https://leetcode.com/problems/4sum/"),
+        ("Merge Strings Alternately", "Easy", "https://leetcode.com/problems/merge-strings-alternately/"),
+        ("Rotate Array", "Medium", "https://leetcode.com/problems/rotate-array/"),
+        ("Merge Sorted Array", "Easy", "https://leetcode.com/problems/merge-sorted-array/"),
+        ("Remove Duplicates From Sorted Array", "Easy", "https://leetcode.com/problems/remove-duplicates-from-sorted-array/"),
+        ("Boats to Save People", "Medium", "https://leetcode.com/problems/boats-to-save-people/"),
     ]),
     ("Sliding Window", [
         ("Best Time to Buy and Sell Stock", "Easy", "https://leetcode.com/problems/best-time-to-buy-and-sell-stock/"),
@@ -27,6 +54,9 @@ NEETCODE_150 = [
         ("Permutation in String", "Medium", "https://leetcode.com/problems/permutation-in-string/"),
         ("Minimum Window Substring", "Hard", "https://leetcode.com/problems/minimum-window-substring/"),
         ("Sliding Window Maximum", "Hard", "https://leetcode.com/problems/sliding-window-maximum/"),
+        ("Contains Duplicate II", "Easy", "https://leetcode.com/problems/contains-duplicate-ii/"),
+        ("Minimum Size Subarray Sum", "Medium", "https://leetcode.com/problems/minimum-size-subarray-sum/"),
+        ("Find K Closest Elements", "Medium", "https://leetcode.com/problems/find-k-closest-elements/"),
     ]),
     ("Stack", [
         ("Valid Parentheses", "Easy", "https://leetcode.com/problems/valid-parentheses/"),
@@ -36,6 +66,13 @@ NEETCODE_150 = [
         ("Daily Temperatures", "Medium", "https://leetcode.com/problems/daily-temperatures/"),
         ("Car Fleet", "Medium", "https://leetcode.com/problems/car-fleet/"),
         ("Largest Rectangle in Histogram", "Hard", "https://leetcode.com/problems/largest-rectangle-in-histogram/"),
+        ("Baseball Game", "Easy", "https://leetcode.com/problems/baseball-game/"),
+        ("Implement Stack using Queues", "Easy", "https://leetcode.com/problems/implement-stack-using-queues/"),
+        ("Asteroid Collision", "Medium", "https://leetcode.com/problems/asteroid-collision/"),
+        ("Online Stock Span", "Medium", "https://leetcode.com/problems/online-stock-span/"),
+        ("Simplify Path", "Medium", "https://leetcode.com/problems/simplify-path/"),
+        ("Decode String", "Medium", "https://leetcode.com/problems/decode-string/"),
+        ("Maximum Frequency Stack", "Hard", "https://leetcode.com/problems/maximum-frequency-stack/"),
     ]),
     ("Binary Search", [
         ("Binary Search", "Easy", "https://leetcode.com/problems/binary-search/"),
@@ -45,6 +82,13 @@ NEETCODE_150 = [
         ("Search in Rotated Sorted Array", "Medium", "https://leetcode.com/problems/search-in-rotated-sorted-array/"),
         ("Time Based Key-Value Store", "Medium", "https://leetcode.com/problems/time-based-key-value-store/"),
         ("Median of Two Sorted Arrays", "Hard", "https://leetcode.com/problems/median-of-two-sorted-arrays/"),
+        ("Search Insert Position", "Easy", "https://leetcode.com/problems/search-insert-position/"),
+        ("Guess Number Higher or Lower", "Easy", "https://leetcode.com/problems/guess-number-higher-or-lower/"),
+        ("Sqrt(x)", "Easy", "https://leetcode.com/problems/sqrtx/"),
+        ("Capacity To Ship Packages Within D Days", "Medium", "https://leetcode.com/problems/capacity-to-ship-packages-within-d-days/"),
+        ("Search in Rotated Sorted Array II", "Medium", "https://leetcode.com/problems/search-in-rotated-sorted-array-ii/"),
+        ("Split Array Largest Sum", "Hard", "https://leetcode.com/problems/split-array-largest-sum/"),
+        ("Find in Mountain Array", "Hard", "https://leetcode.com/problems/find-in-mountain-array"),
     ]),
     ("Linked List", [
         ("Reverse Linked List", "Easy", "https://leetcode.com/problems/reverse-linked-list/"),
@@ -58,6 +102,9 @@ NEETCODE_150 = [
         ("LRU Cache", "Medium", "https://leetcode.com/problems/lru-cache/"),
         ("Merge k Sorted Lists", "Hard", "https://leetcode.com/problems/merge-k-sorted-lists/"),
         ("Reverse Nodes in k-Group", "Hard", "https://leetcode.com/problems/reverse-nodes-in-k-group/"),
+        ("Reverse Linked List II", "Medium", "https://leetcode.com/problems/reverse-linked-list-ii/"),
+        ("Design Circular Queue", "Medium", "https://leetcode.com/problems/design-circular-queue/"),
+        ("LFU Cache", "Hard", "https://leetcode.com/problems/lfu-cache/"),
     ]),
     ("Trees", [
         ("Invert Binary Tree", "Easy", "https://leetcode.com/problems/invert-binary-tree/"),
@@ -75,11 +122,14 @@ NEETCODE_150 = [
         ("Construct Binary Tree from Preorder and Inorder Traversal", "Medium", "https://leetcode.com/problems/construct-binary-tree-from-preorder-and-inorder-traversal/"),
         ("Binary Tree Maximum Path Sum", "Hard", "https://leetcode.com/problems/binary-tree-maximum-path-sum/"),
         ("Serialize and Deserialize Binary Tree", "Hard", "https://leetcode.com/problems/serialize-and-deserialize-binary-tree/"),
-    ]),
-    ("Tries", [
-        ("Implement Trie (Prefix Tree)", "Medium", "https://leetcode.com/problems/implement-trie-prefix-tree/"),
-        ("Design Add and Search Words Data Structure", "Medium", "https://leetcode.com/problems/add-and-search-word-data-structure-design/"),
-        ("Word Search II", "Hard", "https://leetcode.com/problems/word-search-ii/"),
+        ("Binary Tree Inorder Traversal", "Easy", "https://leetcode.com/problems/binary-tree-inorder-traversal/"),
+        ("Binary Tree Preorder Traversal", "Easy", "https://leetcode.com/problems/binary-tree-preorder-traversal/"),
+        ("Insert into a Binary Search Tree", "Medium", "https://leetcode.com/problems/insert-into-a-binary-search-tree/"),
+        ("Binary Tree Postorder Traversal", "Easy", "https://leetcode.com/problems/binary-tree-postorder-traversal/"),
+        ("Delete Node in a BST", "Medium", "https://leetcode.com/problems/delete-node-in-a-bst/"),
+        ("Construct Quad Tree", "Medium", "https://leetcode.com/problems/construct-quad-tree/"),
+        ("Delete Leaves With a Given Value", "Medium", "https://leetcode.com/problems/delete-leaves-with-a-given-value"),
+        ("House Robber III", "Medium", "https://leetcode.com/problems/house-robber-iii/"),
     ]),
     ("Heap / Priority Queue", [
         ("Kth Largest Element in a Stream", "Easy", "https://leetcode.com/problems/kth-largest-element-in-a-stream/"),
@@ -89,6 +139,11 @@ NEETCODE_150 = [
         ("Task Scheduler", "Medium", "https://leetcode.com/problems/task-scheduler/"),
         ("Design Twitter", "Medium", "https://leetcode.com/problems/design-twitter/"),
         ("Find Median from Data Stream", "Hard", "https://leetcode.com/problems/find-median-from-data-stream/"),
+        ("Single-Threaded CPU", "Medium", "https://leetcode.com/problems/single-threaded-cpu/"),
+        ("Reorganize String", "Medium", "https://leetcode.com/problems/reorganize-string/"),
+        ("Longest Happy String", "Medium", "https://leetcode.com/problems/longest-happy-string/"),
+        ("Car Pooling", "Medium", "https://leetcode.com/problems/car-pooling/"),
+        ("IPO", "Hard", "https://leetcode.com/problems/ipo/"),
     ]),
     ("Backtracking", [
         ("Subsets", "Medium", "https://leetcode.com/problems/subsets/"),
@@ -100,6 +155,20 @@ NEETCODE_150 = [
         ("Palindrome Partitioning", "Medium", "https://leetcode.com/problems/palindrome-partitioning/"),
         ("Letter Combinations of a Phone Number", "Medium", "https://leetcode.com/problems/letter-combinations-of-a-phone-number/"),
         ("N-Queens", "Hard", "https://leetcode.com/problems/n-queens/"),
+        ("Sum of All Subsets XOR Total", "Easy", "https://leetcode.com/problems/sum-of-all-subset-xor-totals"),
+        ("Combinations", "Medium", "https://leetcode.com/problems/combinations/"),
+        ("Combination Sum III", "Medium", "https://leetcode.com/problems/combination-sum-iii/"),
+        ("Permutations II", "Medium", "https://leetcode.com/problems/permutations-ii/"),
+        ("Matchsticks to Square", "Medium", "https://leetcode.com/problems/matchsticks-to-square/"),
+        ("Partition to K Equal Sum Subsets", "Medium", "https://leetcode.com/problems/partition-to-k-equal-sum-subsets/"),
+        ("N-Queens II", "Hard", "https://leetcode.com/problems/n-queens-ii/"),
+        ("Word Break II", "Hard", "https://leetcode.com/problems/word-break-ii"),
+    ]),
+    ("Tries", [
+        ("Implement Trie (Prefix Tree)", "Medium", "https://leetcode.com/problems/implement-trie-prefix-tree/"),
+        ("Design Add and Search Words Data Structure", "Medium", "https://leetcode.com/problems/add-and-search-word-data-structure-design/"),
+        ("Word Search II", "Hard", "https://leetcode.com/problems/word-search-ii/"),
+        ("Extra Characters in a String", "Medium", "https://leetcode.com/problems/extra-characters-in-a-string/"),
     ]),
     ("Graphs", [
         ("Number of Islands", "Medium", "https://leetcode.com/problems/number-of-islands/"),
@@ -115,12 +184,26 @@ NEETCODE_150 = [
         ("Number of Connected Components in an Undirected Graph", "Medium", "https://leetcode.com/problems/number-of-connected-components-in-an-undirected-graph/"),
         ("Redundant Connection", "Medium", "https://leetcode.com/problems/redundant-connection/"),
         ("Word Ladder", "Hard", "https://leetcode.com/problems/word-ladder/"),
-        ("Reconstruct Itinerary", "Hard", "https://leetcode.com/problems/reconstruct-itinerary/"),
-        ("Min Cost to Connect All Points", "Medium", "https://leetcode.com/problems/min-cost-to-connect-all-points/"),
+        ("Island Perimeter", "Easy", "https://leetcode.com/problems/island-perimeter/"),
+        ("Verifying an Alien Dictionary", "Easy", "https://leetcode.com/problems/verifying-an-alien-dictionary/"),
+        ("Find the Town Judge", "Easy", "https://leetcode.com/problems/find-the-town-judge"),
+        ("Open the Lock", "Medium", "https://leetcode.com/problems/open-the-lock/"),
+        ("Course Schedule IV", "Medium", "https://leetcode.com/problems/course-schedule-iv/"),
+        ("Accounts Merge", "Medium", "https://leetcode.com/problems/accounts-merge/"),
+        ("Evaluate Division", "Medium", "https://leetcode.com/problems/evaluate-division/"),
+        ("Minimum Height Trees", "Medium", "https://leetcode.com/problems/minimum-height-trees"),
+    ]),
+    ("Advanced Graphs", [
+        ("Path With Minimum Effort", "Medium", "https://leetcode.com/problems/path-with-minimum-effort/"),
         ("Network Delay Time", "Medium", "https://leetcode.com/problems/network-delay-time/"),
+        ("Min Cost to Connect All Points", "Medium", "https://leetcode.com/problems/min-cost-to-connect-all-points/"),
+        ("Cheapest Flights Within K Stops", "Medium", "https://leetcode.com/problems/cheapest-flights-within-k-stops/"),
+        ("Reconstruct Itinerary", "Hard", "https://leetcode.com/problems/reconstruct-itinerary/"),
         ("Swim in Rising Water", "Hard", "https://leetcode.com/problems/swim-in-rising-water/"),
         ("Alien Dictionary", "Hard", "https://leetcode.com/problems/alien-dictionary/"),
-        ("Cheapest Flights Within K Stops", "Medium", "https://leetcode.com/problems/cheapest-flights-within-k-stops/"),
+        ("Find Critical and Pseudo-Critical Edges in Minimum Spanning Tree", "Hard", "https://leetcode.com/problems/find-critical-and-pseudo-critical-edges-in-minimum-spanning-tree/"),
+        ("Build a Matrix With Conditions", "Hard", "https://leetcode.com/problems/build-a-matrix-with-conditions"),
+        ("Greatest Common Divisor Traversal", "Hard", "https://leetcode.com/problems/greatest-common-divisor-traversal"),
     ]),
     ("1-D Dynamic Programming", [
         ("Climbing Stairs", "Easy", "https://leetcode.com/problems/climbing-stairs/"),
@@ -135,6 +218,11 @@ NEETCODE_150 = [
         ("Word Break", "Medium", "https://leetcode.com/problems/word-break/"),
         ("Longest Increasing Subsequence", "Medium", "https://leetcode.com/problems/longest-increasing-subsequence/"),
         ("Partition Equal Subset Sum", "Medium", "https://leetcode.com/problems/partition-equal-subset-sum/"),
+        ("N-th Tribonacci Number", "Easy", "https://leetcode.com/problems/n-th-tribonacci-number/"),
+        ("Combination Sum IV", "Medium", "https://leetcode.com/problems/combination-sum-iv/"),
+        ("Perfect Squares", "Medium", "https://leetcode.com/problems/perfect-squares/"),
+        ("Integer Break", "Medium", "https://leetcode.com/problems/integer-break/"),
+        ("Stone Game III", "Hard", "https://leetcode.com/problems/stone-game-iii/"),
     ]),
     ("2-D Dynamic Programming", [
         ("Unique Paths", "Medium", "https://leetcode.com/problems/unique-paths/"),
@@ -148,6 +236,11 @@ NEETCODE_150 = [
         ("Edit Distance", "Medium", "https://leetcode.com/problems/edit-distance/"),
         ("Burst Balloons", "Hard", "https://leetcode.com/problems/burst-balloons/"),
         ("Regular Expression Matching", "Hard", "https://leetcode.com/problems/regular-expression-matching/"),
+        ("Unique Paths II", "Medium", "https://leetcode.com/problems/unique-paths-ii/"),
+        ("Minimum Path Sum", "Medium", "https://leetcode.com/problems/minimum-path-sum/"),
+        ("Last Stone Weight II", "Medium", "https://leetcode.com/problems/last-stone-weight-ii/"),
+        ("Stone Game", "Medium", "https://leetcode.com/problems/stone-game/"),
+        ("Stone Game II", "Medium", "https://leetcode.com/problems/stone-game-ii/"),
     ]),
     ("Greedy", [
         ("Maximum Subarray", "Medium", "https://leetcode.com/problems/maximum-subarray/"),
@@ -158,6 +251,12 @@ NEETCODE_150 = [
         ("Merge Triplets to Form Target Triplet", "Medium", "https://leetcode.com/problems/merge-triplets-to-form-target-triplet/"),
         ("Partition Labels", "Medium", "https://leetcode.com/problems/partition-labels/"),
         ("Valid Parenthesis String", "Medium", "https://leetcode.com/problems/valid-parenthesis-string/"),
+        ("Lemonade Change", "Easy", "https://leetcode.com/problems/lemonade-change/"),
+        ("Maximum Sum Circular Subarray", "Medium", "https://leetcode.com/problems/maximum-sum-circular-subarray/"),
+        ("Longest Turbulent Subarray", "Medium", "https://leetcode.com/problems/longest-turbulent-subarray/"),
+        ("Jump Game VII", "Medium", "https://leetcode.com/problems/jump-game-vii/"),
+        ("Dota2 Senate", "Medium", "https://leetcode.com/problems/dota2-senate/"),
+        ("Candy", "Hard", "https://leetcode.com/problems/candy/"),
     ]),
     ("Intervals", [
         ("Insert Interval", "Medium", "https://leetcode.com/problems/insert-interval/"),
@@ -166,6 +265,7 @@ NEETCODE_150 = [
         ("Meeting Rooms", "Easy", "https://leetcode.com/problems/meeting-rooms/"),
         ("Meeting Rooms II", "Medium", "https://leetcode.com/problems/meeting-rooms-ii/"),
         ("Minimum Interval to Include Each Query", "Hard", "https://leetcode.com/problems/minimum-interval-to-include-each-query/"),
+        ("Meeting Rooms III", "Hard", "https://leetcode.com/problems/meeting-rooms-iii"),
     ]),
     ("Math & Geometry", [
         ("Rotate Image", "Medium", "https://leetcode.com/problems/rotate-image/"),
@@ -176,6 +276,11 @@ NEETCODE_150 = [
         ("Pow(x, n)", "Medium", "https://leetcode.com/problems/powx-n/"),
         ("Multiply Strings", "Medium", "https://leetcode.com/problems/multiply-strings/"),
         ("Detect Squares", "Medium", "https://leetcode.com/problems/detect-squares/"),
+        ("Excel Sheet Column Title", "Easy", "https://leetcode.com/problems/excel-sheet-column-title/"),
+        ("Insert Greatest Common Divisors in Linked List", "Medium", "https://leetcode.com/problems/insert-greatest-common-divisors-in-linked-list/"),
+        ("Greatest Common Divisor of Strings", "Easy", "https://leetcode.com/problems/greatest-common-divisor-of-strings/"),
+        ("Transpose Matrix", "Easy", "https://leetcode.com/problems/transpose-matrix"),
+        ("Roman to Integer", "Easy", "https://leetcode.com/problems/roman-to-integer/"),
     ]),
     ("Bit Manipulation", [
         ("Single Number", "Easy", "https://leetcode.com/problems/single-number/"),
@@ -185,5 +290,8 @@ NEETCODE_150 = [
         ("Missing Number", "Easy", "https://leetcode.com/problems/missing-number/"),
         ("Sum of Two Integers", "Medium", "https://leetcode.com/problems/sum-of-two-integers/"),
         ("Reverse Integer", "Medium", "https://leetcode.com/problems/reverse-integer/"),
+        ("Bitwise AND of Numbers Range", "Medium", "https://leetcode.com/problems/bitwise-and-of-numbers-range"),
+        ("Add Binary", "Easy", "https://leetcode.com/problems/add-binary/"),
+        ("Minimum Array End", "Medium", "https://leetcode.com/problems/minimum-array-end/"),
     ]),
 ]

@@ -1,6 +1,6 @@
 # 1337
 
-Spaced-repetition tracker for the NeetCode 150, self-hosted on alexandria. Solve a problem, then get nudged to review it at day 1, week 1, and week 3 — with a daily email telling you what's due.
+Spaced-repetition tracker for the NeetCode 250, self-hosted on alexandria. Solve a problem, then get nudged to review it at day 1, week 1, and week 3 — with a daily email telling you what's due.
 
 ## How the review cycle works
 
@@ -18,7 +18,7 @@ Every gap is calculated from the day you actually complete the review, not the o
 ## Pages
 
 - **Dashboard** — what's due today, what's coming up, and progress per category.
-- **Problems** — the full NeetCode 150 in roadmap order, grouped by category, with "mark solved" buttons.
+- **Problems** — the full NeetCode 250 in roadmap order, grouped by category, with "mark solved" buttons.
 - **Digest** — today's due list plus a "send this email now" button for testing your Resend setup.
 
 ## Daily email digest
@@ -76,5 +76,5 @@ Or give it its own subdomain (`1337.alexandria.local`) if you'd rather keep it o
 
 ## Notes
 
-- The NeetCode 150 list is seeded on first run, in NeetCode's roadmap order, grouped by category.
+- The NeetCode 250 list is seeded on first run, in NeetCode's roadmap order, grouped by category. Switching problem sets (as happened here, from the 150 to the 250) matches existing rows by LeetCode URL, so it only adds/reorders problems and never touches your review progress.
 - No auth — this assumes it only sits on your LAN/Tailscale like the rest of the stack. Add basic auth in Nginx if you ever expose it further.

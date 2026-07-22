@@ -2,8 +2,9 @@ import os
 import sqlite3
 from datetime import date, timedelta
 from flask import Flask, g, render_template, request, redirect, url_for
+from werkzeug.middleware.proxy_fix import ProxyFix
 
-from problems_data import NEETCODE_150
+from problems_data import NEETCODE_250
 import digest
 
 DB_PATH = "/data/tracker.db"
@@ -18,6 +19,7 @@ STAGE_INFO = {
 }
 
 app = Flask(__name__)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_prefix=1)
 
 
 def get_db():
@@ -69,17 +71,25 @@ def init_db():
         )
     """)
 
-    count = db.execute("SELECT COUNT(*) FROM problems").fetchone()[0]
-    if count == 0:
-        order_index = 0
-        for category, problems in NEETCODE_150:
-            for name, difficulty, link in problems:
+    order_index = 0
+    for category, problems in NEETCODE_250:
+        for name, difficulty, link in problems:
+            existing = db.execute(
+                "SELECT id FROM problems WHERE url = ?", (link,)
+            ).fetchone()
+            if existing:
+                db.execute(
+                    "UPDATE problems SET name = ?, category = ?, difficulty = ?, order_index = ? "
+                    "WHERE id = ?",
+                    (name, category, difficulty, order_index, existing[0]),
+                )
+            else:
                 db.execute(
                     "INSERT INTO problems (name, category, difficulty, url, order_index) "
                     "VALUES (?, ?, ?, ?, ?)",
                     (name, category, difficulty, link, order_index),
                 )
-                order_index += 1
+            order_index += 1
     db.commit()
     db.close()
 
