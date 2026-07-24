@@ -22,6 +22,29 @@
 </section>
 
 <section class="panel">
+    <h2>Goal pace — NeetCode 150</h2>
+    <p class="pace-line">
+        <span class="text-accent">{{ pacing.actual_started }}</span>/{{ pacing.target_count }} started ·
+        day {{ pacing.days_elapsed + 1 }} of {{ pacing.target_days }} ·
+        {% if pacing.pace_delta > 0 %}
+            <span class="text-accent">{{ pacing.pace_delta }} ahead of pace</span>
+        {% elif pacing.pace_delta < 0 %}
+            <span class="overdue">{{ -pacing.pace_delta }} behind pace</span>
+        {% else %}
+            <span class="dim">on pace</span>
+        {% endif %}
+    </p>
+    <p class="dim">
+        {% if pacing.in_new_problem_window %}
+            Needs ~{{ "%.1f"|format(pacing.required_rate) }}/day new problems through {{ pacing.new_problem_deadline }}, then review-only until {{ pacing.deadline }}.
+        {% else %}
+            Past the new-problem window ({{ pacing.new_problem_deadline }}) — review-only mode until {{ pacing.deadline }}.
+            {% if pacing.remaining_unstarted > 0 %}<span class="overdue">{{ pacing.remaining_unstarted }} still not started.</span>{% endif %}
+        {% endif %}
+    </p>
+</section>
+
+<section class="panel">
     <h2>Due for review</h2>
     {% if due %}
     <table class="problem-table">
@@ -48,7 +71,35 @@
         </tbody>
     </table>
     {% else %}
-    <p class="empty">Nothing due today. Go solve something new from the <a href="{{ url_for('problem_list') }}">problem list</a>.</p>
+    <p class="empty">Nothing due today.</p>
+    {% endif %}
+</section>
+
+<section class="panel">
+    <h2>Suggested new problems for today</h2>
+    {% if suggested %}
+    <table class="problem-table">
+        <thead>
+            <tr><th>Problem</th><th>Category</th><th></th></tr>
+        </thead>
+        <tbody>
+            {% for p in suggested %}
+            <tr>
+                <td><a href="{{ p.url }}" target="_blank" rel="noopener">{{ p.name }}</a> <span class="diff diff-{{ p.difficulty|lower }}">{{ p.difficulty }}</span></td>
+                <td>{{ p.category }}</td>
+                <td class="actions">
+                    <form method="post" action="{{ url_for('mark_solved', problem_id=p.id) }}">
+                        <button class="btn btn-good" type="submit">Mark solved</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% elif pacing.in_new_problem_window %}
+    <p class="empty">You're caught up on pace — no new problems suggested today. Feel free to get ahead anyway from the <a href="{{ url_for('problem_list') }}">problem list</a>.</p>
+    {% else %}
+    <p class="empty">In review-only mode — no new problems suggested.</p>
     {% endif %}
 </section>
 
@@ -66,7 +117,7 @@
 </section>
 
 <section class="panel">
-    <h2>Progress by category</h2>
+    <h2>Progress by category (core)</h2>
     <div class="category-grid">
         {% for c in categories %}
         <div class="category-bar">

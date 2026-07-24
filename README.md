@@ -1,6 +1,14 @@
 # 1337
 
-Spaced-repetition tracker for the NeetCode 250, self-hosted on alexandria. Solve a problem, then get nudged to review it at day 1, week 1, and week 3 — with a daily email telling you what's due.
+Spaced-repetition tracker for the NeetCode 150, self-hosted on alexandria. Solve a problem, then get nudged to review it at day 1, week 1, and week 3 — with a daily email telling you what's due. The NeetCode 250's extra ~100 problems are kept as an optional bonus pool, not part of the goal.
+
+## The goal
+
+The core goal is **all 150 NeetCode 150 problems mastered within 2 months**, aimed at being interview-ready for internship applications rather than maximum breadth.
+
+The pacing math accounts for the 21-day review tail: a problem solved today doesn't count as "mastered" until its 3-week review clears, so the app backs off the new-problem window early — by default it targets finishing new problems within the first ~31 days of the 60-day window, then treats the rest as review-only. The dashboard shows your actual pace against this, plus a suggested number of new problems for today (never a hard limit — just a nudge).
+
+Want a different timeframe? Set `GOAL_TARGET_DAYS` in your environment (defaults to 60).
 
 ## How the review cycle works
 
@@ -15,10 +23,15 @@ If a review doesn't come back to you, hit **Struggled** instead of **Solved it**
 
 Every gap is calculated from the day you actually complete the review, not the original due date — so if you're late, later reviews shift out from there instead of piling up (same idea as Anki's rescheduling).
 
+## Already solved some of these before?
+
+Use the **Backfill** tab. Pick the problem, the date you last worked on it, and how far you got (just solved / day-1 done / week-1 done / mastered) — it reconstructs the right review state and schedules the next review from that date, exactly as if you'd done it through the app all along. This also counts toward your pace, so backfilling your head start makes the pacing math accurate instead of thinking you're behind.
+
 ## Pages
 
-- **Dashboard** — what's due today, what's coming up, and progress per category.
-- **Problems** — the full NeetCode 250 in roadmap order, grouped by category, with "mark solved" buttons.
+- **Dashboard** — goal pace, what's due today, suggested new problems for today, what's coming up, and progress per category.
+- **Problems** — browse by core 150 / bonus pool / all 250, grouped by category, with "mark solved" buttons.
+- **Backfill** — log problems you solved before setting this up.
 - **Digest** — today's due list plus a "send this email now" button for testing your Resend setup.
 
 ## Daily email digest

@@ -1,7 +1,7 @@
 services:
   "1337":
     build: .
-    container_name: "1337"
+    container_name: 1337
     restart: unless-stopped
     ports:
       - "5150:5000"
@@ -13,3 +13,4 @@ services:
       - DIGEST_FROM_EMAIL=${DIGEST_FROM_EMAIL:-onboarding@resend.dev}
       - DIGEST_SEND_TIME=${DIGEST_SEND_TIME:-07:00}
       - TZ=${TZ:-Europe/London}
+      - GOAL_TARGET_DAYS=${GOAL_TARGET_DAYS:-60}

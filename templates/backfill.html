@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Backfill — 1337{% endblock %}
+{% block content %}
+
+<h1>Backfill past progress</h1>
+<p class="dim">Already solved something before setting this up? Log it here with the real date instead of losing your head start.</p>
+
+{% if request.args.get('done') %}
+<p class="tag tag-mastered" style="display:inline-block; margin-bottom:1rem;">Saved.</p>
+{% endif %}
+
+<section class="panel">
+    <form method="post" action="{{ url_for('backfill') }}" class="backfill-form">
+        <label>
+            Problem
+            <select name="problem_id" required>
+                <option value="" disabled selected>Choose a problem…</option>
+                {% for category, rows in by_category.items() %}
+                <optgroup label="{{ category }}">
+                    {% for p in rows %}
+                    <option value="{{ p.id }}">{{ p.name }} ({{ p.difficulty }})</option>
+                    {% endfor %}
+                </optgroup>
+                {% endfor %}
+            </select>
+        </label>
+
+        <label>
+            Date you last worked on it
+            <input type="date" name="completed_date" value="{{ today }}" max="{{ today }}" required>
+        </label>
+
+        <label>
+            How far did you get, as of that date?
+            <select name="completed_stage" required>
+                <option value="0">Just solved it — no reviews done yet</option>
+                <option value="1">Completed the day-1 review</option>
+                <option value="2">Completed the week-1 review</option>
+                <option value="3">Completed the 3-week review (mastered)</option>
+            </select>
+        </label>
+
+        <button class="btn btn-good" type="submit">Save</button>
+    </form>
+</section>
+
+{% endblock %}
