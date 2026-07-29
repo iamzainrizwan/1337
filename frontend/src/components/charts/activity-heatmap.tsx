@@ -81,7 +81,7 @@ export function ActivityHeatmap({ activity }: { activity: ActivityDay[] }) {
                   key={di}
                   title={day ? `${day.date}: ${day.count} review${day.count === 1 ? "" : "s"}` : undefined}
                   className={cn(
-                    "size-[13px] rounded-[2px] transition-transform hover:scale-125",
+                    "size-[13px] rounded-none transition-transform hover:scale-125",
                     day ? LEVEL_CLASSES[levelForCount(day.count)] : "opacity-0"
                   )}
                 />
@@ -92,7 +92,7 @@ export function ActivityHeatmap({ activity }: { activity: ActivityDay[] }) {
         <div className="flex items-center gap-1.5 pl-7 pt-1 text-[10px] text-fg-dim">
           <span>Less</span>
           {LEVEL_CLASSES.map((cls, i) => (
-            <div key={i} className={cn("size-[10px] rounded-[2px]", cls)} />
+            <div key={i} className={cn("size-[10px] rounded-none", cls)} />
           ))}
           <span>More</span>
         </div>

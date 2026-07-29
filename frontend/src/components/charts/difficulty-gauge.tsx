@@ -67,7 +67,7 @@ export function DifficultyGauge({ data }: { data: DifficultyBucket[] }) {
                   stroke={c.fill}
                   strokeWidth={outerR - innerR}
                   fill="none"
-                  strokeLinecap="round"
+                  strokeLinecap="butt"
                   style={{ filter: `drop-shadow(0 0 6px ${c.fill}80)` }}
                 />
               )}
@@ -86,7 +86,7 @@ export function DifficultyGauge({ data }: { data: DifficultyBucket[] }) {
           const c = COLORS[seg.difficulty] ?? COLORS.Easy
           return (
             <div key={seg.difficulty} className="flex items-center gap-1.5 tabular">
-              <span className="size-2.5 rounded-full" style={{ background: c.fill }} />
+              <span className="size-2.5 rounded-none" style={{ background: c.fill }} />
               <span className="text-fg-dim">{seg.difficulty}</span>
               <span style={{ color: c.text }}>
                 {seg.mastered}/{seg.total}

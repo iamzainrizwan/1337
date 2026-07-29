@@ -13,13 +13,13 @@ function Progress({
     <ProgressPrimitive.Root
       data-slot="progress"
       className={cn(
-        "bg-border/60 relative h-2 w-full overflow-hidden rounded-full",
+        "bg-border/60 relative h-2 w-full overflow-hidden rounded-none",
         className
       )}
       {...props}
     >
       <motion.div
-        className={cn("h-full rounded-full bg-red", indicatorClassName)}
+        className={cn("h-full rounded-none bg-red", indicatorClassName)}
         initial={{ width: 0 }}
         animate={{ width: `${value ?? 0}%` }}
         transition={{ duration: 0.8, ease: "easeOut" }}

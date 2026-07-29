@@ -26,7 +26,7 @@ export function TagEditor({ id, tags }: { id: number; tags: string | null }) {
               .map((t) => t.trim())
               .filter(Boolean)
               .map((t) => (
-                <span key={t} className="rounded-full border border-border bg-bg-alt px-2 py-0.5">
+                <span key={t} className="rounded-none border border-border bg-bg-alt px-2 py-0.5">
                   {t}
                 </span>
               ))
