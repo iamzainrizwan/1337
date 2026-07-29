@@ -2,19 +2,21 @@ import math
 import os
 import sqlite3
 from datetime import date, timedelta
-from flask import Flask, g, render_template, request, redirect, url_for
+from flask import Flask, g, jsonify, request, send_from_directory
 
 from problems_data import NEETCODE_250, CORE_150_URLS
 import digest
 
 DB_PATH = "/data/tracker.db"
 DIGEST_SEND_TIME = os.environ.get("DIGEST_SEND_TIME", "07:00")
+STATIC_DIST = os.path.join(os.path.dirname(__file__), "frontend", "dist")
 
-# How many days after a review is completed the pipeline is fully "drained" --
-# i.e. the gap between solving a problem and its final 3-week review.
-REVIEW_TAIL_DAYS = 1 + 7 + 21  # day-1 + week-1 + 3-week gaps, cumulative from solve
+# Default seed for target_date on first-ever run, in days from goal_start_date.
+# Kept as an env var only for the initial seed -- the real source of truth
+# afterward is settings.target_date, editable at runtime.
+GOAL_TARGET_DAYS = int(os.environ.get("GOAL_TARGET_DAYS", "60"))
 
-GOAL_TARGET_DAYS = int(os.environ.get("GOAL_TARGET_DAYS", "60"))  # 2 months default
+HEATMAP_WEEKS = 13
 
 # stage -> (label, days until next review after completing this stage)
 STAGE_INFO = {
@@ -24,7 +26,7 @@ STAGE_INFO = {
     3: {"label": "3 Week review", "next_gap": 21},  # gap to reach stage 3
 }
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder=None)
 
 
 def get_db():
@@ -44,6 +46,7 @@ def close_db(exception=None):
 def init_db():
     os.makedirs("/data", exist_ok=True)
     db = sqlite3.connect(DB_PATH)
+    db.row_factory = sqlite3.Row
     db.execute("""
         CREATE TABLE IF NOT EXISTS problems (
             id INTEGER PRIMARY KEY,
@@ -81,10 +84,13 @@ def init_db():
             value TEXT NOT NULL
         )
     """)
-    # add `pool` column for installs created before it existed
+
+    # additive migrations for installs created before these columns existed
     cols = [r[1] for r in db.execute("PRAGMA table_info(problems)").fetchall()]
     if "pool" not in cols:
         db.execute("ALTER TABLE problems ADD COLUMN pool TEXT NOT NULL DEFAULT 'core'")
+    if "company_tags" not in cols:
+        db.execute("ALTER TABLE problems ADD COLUMN company_tags TEXT")
 
     order_index = 0
     for category, problems in NEETCODE_250:
@@ -107,37 +113,42 @@ def init_db():
     if db.execute("SELECT 1 FROM settings WHERE key = 'goal_start_date'").fetchone() is None:
         db.execute("INSERT INTO settings (key, value) VALUES ('goal_start_date', ?)", (today_str(),))
 
+    # target_date seeded once off goal_start_date + GOAL_TARGET_DAYS, then
+    # freely editable afterward via PATCH /api/goal.
+    if db.execute("SELECT 1 FROM settings WHERE key = 'target_date'").fetchone() is None:
+        start = date.fromisoformat(get_setting_raw(db, "goal_start_date", today_str()))
+        seeded_target = (start + timedelta(days=GOAL_TARGET_DAYS)).isoformat()
+        db.execute("INSERT INTO settings (key, value) VALUES ('target_date', ?)", (seeded_target,))
+
     db.commit()
     db.close()
+
+
+def get_setting_raw(db, key, default=None):
+    row = db.execute("SELECT value FROM settings WHERE key = ?", (key,)).fetchone()
+    return row["value"] if row else default
 
 
 def today_str():
     return date.today().isoformat()
 
 
-def get_setting(db, key, default=None):
-    row = db.execute("SELECT value FROM settings WHERE key = ?", (key,)).fetchone()
-    return row["value"] if row else default
+def get_setting(key, default=None):
+    return get_setting_raw(get_db(), key, default)
+
+
+def row_to_dict(row):
+    return dict(row) if row is not None else None
 
 
 def get_pacing():
-    """Goal math for the core (NeetCode 150) set, factoring in the 21-day
-    review tail so the suggested pace actually finishes reviews in time,
-    not just new-problem starts."""
+    """Deadline-based dynamic replan: how many core problems still need a
+    first pass, and what rate that requires from today onward, recomputed
+    fresh every call rather than compared against a fixed day-0 schedule."""
     db = get_db()
-    start_date = date.fromisoformat(get_setting(db, "goal_start_date", today_str()))
-    target_days = GOAL_TARGET_DAYS
+    start_date = date.fromisoformat(get_setting("goal_start_date", today_str()))
+    target_date = date.fromisoformat(get_setting("target_date", today_str()))
     target_count = db.execute("SELECT COUNT(*) FROM problems WHERE pool = 'core'").fetchone()[0]
-
-    # Last day new problems should be started so the final 3-week review
-    # still lands inside the target window.
-    effective_days = max(target_days - REVIEW_TAIL_DAYS, 1)
-    required_rate = target_count / effective_days
-
-    days_elapsed = (date.today() - start_date).days  # 0 on day 1
-    in_new_problem_window = days_elapsed < effective_days
-
-    expected_started_by_today = min(round(required_rate * (days_elapsed + 1)), target_count)
 
     actual_started = db.execute("""
         SELECT COUNT(*) FROM progress pr JOIN problems p ON p.id = pr.problem_id
@@ -149,30 +160,25 @@ def get_pacing():
         WHERE p.pool = 'core' AND pr.status = 'mastered'
     """).fetchone()[0]
 
-    pace_delta = actual_started - expected_started_by_today
-    suggested_new_count = max(expected_started_by_today - actual_started, 0)
-    if not in_new_problem_window:
-        suggested_new_count = 0
     remaining_unstarted = max(target_count - actual_started, 0)
-    suggested_new_count = min(suggested_new_count, remaining_unstarted, 8)
+    days_remaining = max((target_date - date.today()).days, 1)
+    required_rate_today = remaining_unstarted / days_remaining
 
-    deadline = start_date + timedelta(days=target_days)
-    new_problem_deadline = start_date + timedelta(days=effective_days)
+    suggested_new_count = min(math.ceil(required_rate_today), remaining_unstarted)
+    unrealistic = required_rate_today > 8  # more than 8 new problems/day is not a real plan
 
     return {
-        "start_date": start_date,
-        "deadline": deadline,
-        "new_problem_deadline": new_problem_deadline,
-        "target_days": target_days,
+        "start_date": start_date.isoformat(),
+        "target_date": target_date.isoformat(),
         "target_count": target_count,
-        "days_elapsed": days_elapsed,
-        "required_rate": required_rate,
+        "days_remaining": days_remaining,
+        "required_rate_today": required_rate_today,
         "actual_started": actual_started,
         "actual_mastered": actual_mastered,
-        "pace_delta": pace_delta,
-        "suggested_new_count": suggested_new_count,
-        "in_new_problem_window": in_new_problem_window,
         "remaining_unstarted": remaining_unstarted,
+        "suggested_new_count": suggested_new_count,
+        "unrealistic": unrealistic,
+        "past_deadline": date.today() > target_date,
     }
 
 
@@ -189,8 +195,98 @@ def get_suggested_new_problems(count):
     """, (count,)).fetchall()
 
 
-@app.route("/")
-def dashboard():
+def get_activity_by_day(weeks=HEATMAP_WEEKS):
+    db = get_db()
+    start = date.today() - timedelta(days=weeks * 7 - 1)
+    rows = db.execute("""
+        SELECT completed_at AS day, COUNT(*) AS c
+        FROM review_log
+        WHERE completed_at >= ?
+        GROUP BY completed_at
+    """, (start.isoformat(),)).fetchall()
+    counts = {r["day"]: r["c"] for r in rows}
+    return [
+        {"date": (start + timedelta(days=i)).isoformat(), "count": counts.get((start + timedelta(days=i)).isoformat(), 0)}
+        for i in range(weeks * 7)
+    ]
+
+
+def get_streak():
+    activity = get_activity_by_day(weeks=HEATMAP_WEEKS)
+    streak = 0
+    for day in reversed(activity):
+        if day["date"] > today_str():
+            continue
+        if day["count"] > 0:
+            streak += 1
+        else:
+            break
+    return streak
+
+
+def get_burndown_series():
+    db = get_db()
+    pacing = get_pacing()
+    start_date = date.fromisoformat(pacing["start_date"])
+    target_date = date.fromisoformat(pacing["target_date"])
+    target_count = pacing["target_count"]
+
+    rows = db.execute("""
+        SELECT pr.first_solved_at AS day, COUNT(*) AS c
+        FROM progress pr JOIN problems p ON p.id = pr.problem_id
+        WHERE p.pool = 'core' AND pr.first_solved_at IS NOT NULL
+        GROUP BY pr.first_solved_at
+        ORDER BY pr.first_solved_at ASC
+    """).fetchall()
+
+    total_days = max((target_date - start_date).days, 1)
+    cumulative = 0
+    by_day = {r["day"]: r["c"] for r in rows}
+    series = []
+    day = start_date
+    today = date.today()
+    while day <= max(target_date, today):
+        cumulative += by_day.get(day.isoformat(), 0)
+        elapsed = (day - start_date).days
+        ideal = min(round(target_count * elapsed / total_days), target_count) if elapsed >= 0 else 0
+        series.append({
+            "date": day.isoformat(),
+            "actual": cumulative if day <= today else None,
+            "ideal": ideal,
+        })
+        day += timedelta(days=1)
+    return series
+
+
+def get_difficulty_breakdown():
+    db = get_db()
+    rows = db.execute("""
+        SELECT p.difficulty AS difficulty,
+               COUNT(*) AS total,
+               SUM(CASE WHEN pr.status = 'mastered' THEN 1 ELSE 0 END) AS mastered,
+               SUM(CASE WHEN pr.status IS NOT NULL AND pr.status != 'not_started' THEN 1 ELSE 0 END) AS started
+        FROM problems p
+        LEFT JOIN progress pr ON pr.problem_id = p.id
+        WHERE p.pool = 'core'
+        GROUP BY p.difficulty
+    """).fetchall()
+    return [dict(r) for r in rows]
+
+
+def get_today_activity():
+    db = get_db()
+    today = today_str()
+    rows = db.execute("""
+        SELECT p.*, rl.stage, rl.outcome
+        FROM review_log rl JOIN problems p ON p.id = rl.problem_id
+        WHERE rl.completed_at = ?
+        ORDER BY rl.id DESC
+    """, (today,)).fetchall()
+    return [dict(r) for r in rows]
+
+
+@app.route("/api/dashboard")
+def api_dashboard():
     db = get_db()
     today = today_str()
 
@@ -227,23 +323,24 @@ def dashboard():
     pacing = get_pacing()
     suggested = get_suggested_new_problems(pacing["suggested_new_count"])
 
-    return render_template(
-        "dashboard.html",
-        due=due,
-        upcoming=upcoming,
-        totals=totals,
-        mastered=mastered,
-        in_progress=in_progress,
-        categories=categories,
-        stage_info=STAGE_INFO,
-        today=today,
-        pacing=pacing,
-        suggested=suggested,
-    )
+    return jsonify({
+        "due": [dict(r) for r in due],
+        "upcoming": [dict(r) for r in upcoming],
+        "totals": totals,
+        "mastered": mastered,
+        "in_progress": in_progress,
+        "categories": [dict(r) for r in categories],
+        "stage_info": STAGE_INFO,
+        "today": today,
+        "pacing": pacing,
+        "suggested": [dict(r) for r in suggested],
+        "today_activity": get_today_activity(),
+        "streak": get_streak(),
+    })
 
 
-@app.route("/problems")
-def problem_list():
+@app.route("/api/problems")
+def api_problems():
     db = get_db()
     pool_filter = request.args.get("pool", "core")
     rows = db.execute("""
@@ -253,18 +350,38 @@ def problem_list():
         WHERE (? = 'all' OR p.pool = ?)
         ORDER BY p.order_index ASC
     """, (pool_filter, pool_filter)).fetchall()
-
-    by_category = {}
-    for r in rows:
-        by_category.setdefault(r["category"], []).append(r)
-
-    return render_template(
-        "problems.html", by_category=by_category, stage_info=STAGE_INFO, pool_filter=pool_filter
-    )
+    return jsonify({"problems": [dict(r) for r in rows], "stage_info": STAGE_INFO})
 
 
-@app.route("/solve/<int:problem_id>", methods=["POST"])
-def mark_solved(problem_id):
+@app.route("/api/problems/add", methods=["POST"])
+def api_add_problem():
+    data = request.get_json(force=True)
+    db = get_db()
+    max_order = db.execute("SELECT COALESCE(MAX(order_index), 0) AS m FROM problems").fetchone()["m"]
+    cur = db.execute("""
+        INSERT INTO problems (name, category, difficulty, url, order_index, pool, company_tags)
+        VALUES (?, ?, ?, ?, ?, 'custom', ?)
+    """, (
+        data["name"], data["category"], data["difficulty"], data["url"],
+        max_order + 1, data.get("company_tag") or None,
+    ))
+    db.commit()
+    row = db.execute("SELECT * FROM problems WHERE id = ?", (cur.lastrowid,)).fetchone()
+    return jsonify(dict(row)), 201
+
+
+@app.route("/api/problems/<int:problem_id>/tags", methods=["PATCH"])
+def api_update_tags(problem_id):
+    data = request.get_json(force=True)
+    db = get_db()
+    db.execute("UPDATE problems SET company_tags = ? WHERE id = ?", (data.get("company_tags") or None, problem_id))
+    db.commit()
+    row = db.execute("SELECT * FROM problems WHERE id = ?", (problem_id,)).fetchone()
+    return jsonify(dict(row))
+
+
+@app.route("/api/solve/<int:problem_id>", methods=["POST"])
+def api_mark_solved(problem_id):
     db = get_db()
     today = today_str()
     next_review = (date.today() + timedelta(days=STAGE_INFO[1]["next_gap"])).isoformat()
@@ -275,19 +392,22 @@ def mark_solved(problem_id):
         ON CONFLICT(problem_id) DO UPDATE SET
             status='reviewing', stage=1, first_solved_at=?, next_review_at=?, last_action_at=?
     """, (problem_id, today, next_review, today, today, next_review, today))
+    db.execute(
+        "INSERT INTO review_log (problem_id, stage, completed_at, outcome) VALUES (?, 0, ?, 'solved')",
+        (problem_id, today),
+    )
     db.commit()
+    return jsonify({"ok": True})
 
-    return redirect(request.referrer or url_for("dashboard"))
 
-
-@app.route("/review/<int:problem_id>/<action>", methods=["POST"])
-def complete_review(problem_id, action):
+@app.route("/api/review/<int:problem_id>/<action>", methods=["POST"])
+def api_complete_review(problem_id, action):
     """action is 'done' (advance to next stage) or 'struggled' (reset to day-1)."""
     db = get_db()
     today = today_str()
     row = db.execute("SELECT * FROM progress WHERE problem_id = ?", (problem_id,)).fetchone()
     if row is None:
-        return redirect(request.referrer or url_for("dashboard"))
+        return jsonify({"error": "not found"}), 404
 
     current_stage = row["stage"]
 
@@ -318,45 +438,12 @@ def complete_review(problem_id, action):
             """, (next_stage, next_review, today, problem_id))
 
     db.commit()
-    return redirect(request.referrer or url_for("dashboard"))
+    return jsonify({"ok": True})
 
 
-@app.route("/backfill", methods=["GET", "POST"])
-def backfill():
+@app.route("/api/backfill/candidates")
+def api_backfill_candidates():
     db = get_db()
-
-    if request.method == "POST":
-        problem_id = int(request.form["problem_id"])
-        completed_date = request.form["completed_date"]
-        completed_stage = request.form["completed_stage"]  # '0','1','2','3'
-
-        db.execute(
-            "INSERT INTO review_log (problem_id, stage, completed_at, outcome) VALUES (?, ?, ?, ?)",
-            (problem_id, int(completed_stage), completed_date, "backfill"),
-        )
-
-        if completed_stage == "3":
-            db.execute("""
-                INSERT INTO progress (problem_id, status, stage, first_solved_at, next_review_at, last_action_at)
-                VALUES (?, 'mastered', 3, ?, NULL, ?)
-                ON CONFLICT(problem_id) DO UPDATE SET
-                    status='mastered', stage=3, first_solved_at=?, next_review_at=NULL, last_action_at=?
-            """, (problem_id, completed_date, completed_date, completed_date, completed_date))
-        else:
-            next_stage = int(completed_stage) + 1
-            gap = STAGE_INFO[next_stage]["next_gap"]
-            next_review = (date.fromisoformat(completed_date) + timedelta(days=gap)).isoformat()
-            db.execute("""
-                INSERT INTO progress (problem_id, status, stage, first_solved_at, next_review_at, last_action_at)
-                VALUES (?, 'reviewing', ?, ?, ?, ?)
-                ON CONFLICT(problem_id) DO UPDATE SET
-                    status='reviewing', stage=?, first_solved_at=?, next_review_at=?, last_action_at=?
-            """, (problem_id, next_stage, completed_date, next_review, completed_date,
-                  next_stage, completed_date, next_review, completed_date))
-
-        db.commit()
-        return redirect(url_for("backfill", done=1))
-
     rows = db.execute("""
         SELECT p.*, pr.status
         FROM problems p
@@ -364,32 +451,95 @@ def backfill():
         WHERE pr.status IS NULL OR pr.status != 'mastered'
         ORDER BY p.order_index ASC
     """).fetchall()
-
-    by_category = {}
-    for r in rows:
-        by_category.setdefault(r["category"], []).append(r)
-
-    return render_template("backfill.html", by_category=by_category, today=today_str())
+    return jsonify({"problems": [dict(r) for r in rows], "today": today_str()})
 
 
-@app.route("/digest")
-def digest_tab():
-    rows = digest.get_due_today()
-    configured = bool(digest.RESEND_API_KEY and digest.DIGEST_TO)
-    return render_template(
-        "digest.html",
-        rows=rows,
-        configured=configured,
-        to_email=digest.DIGEST_TO,
-        send_time=DIGEST_SEND_TIME,
-        stage_info=STAGE_INFO,
+@app.route("/api/backfill", methods=["POST"])
+def api_backfill():
+    data = request.get_json(force=True)
+    db = get_db()
+    problem_id = int(data["problem_id"])
+    completed_date = data["completed_date"]
+    completed_stage = str(data["completed_stage"])  # '0','1','2','3'
+
+    db.execute(
+        "INSERT INTO review_log (problem_id, stage, completed_at, outcome) VALUES (?, ?, ?, ?)",
+        (problem_id, int(completed_stage), completed_date, "backfill"),
     )
 
+    if completed_stage == "3":
+        db.execute("""
+            INSERT INTO progress (problem_id, status, stage, first_solved_at, next_review_at, last_action_at)
+            VALUES (?, 'mastered', 3, ?, NULL, ?)
+            ON CONFLICT(problem_id) DO UPDATE SET
+                status='mastered', stage=3, first_solved_at=?, next_review_at=NULL, last_action_at=?
+        """, (problem_id, completed_date, completed_date, completed_date, completed_date))
+    else:
+        next_stage = int(completed_stage) + 1
+        gap = STAGE_INFO[next_stage]["next_gap"]
+        next_review = (date.fromisoformat(completed_date) + timedelta(days=gap)).isoformat()
+        db.execute("""
+            INSERT INTO progress (problem_id, status, stage, first_solved_at, next_review_at, last_action_at)
+            VALUES (?, 'reviewing', ?, ?, ?, ?)
+            ON CONFLICT(problem_id) DO UPDATE SET
+                status='reviewing', stage=?, first_solved_at=?, next_review_at=?, last_action_at=?
+        """, (problem_id, next_stage, completed_date, next_review, completed_date,
+              next_stage, completed_date, next_review, completed_date))
 
-@app.route("/digest/send-now", methods=["POST"])
-def digest_send_now():
+    db.commit()
+    return jsonify({"ok": True})
+
+
+@app.route("/api/goal", methods=["GET", "POST"])
+def api_goal():
+    db = get_db()
+    if request.method == "POST":
+        data = request.get_json(force=True)
+        target_date = data["target_date"]
+        date.fromisoformat(target_date)  # validate
+        db.execute("""
+            INSERT INTO settings (key, value) VALUES ('target_date', ?)
+            ON CONFLICT(key) DO UPDATE SET value = ?
+        """, (target_date, target_date))
+        db.commit()
+    return jsonify(get_pacing())
+
+
+@app.route("/api/stats")
+def api_stats():
+    return jsonify({
+        "activity": get_activity_by_day(),
+        "burndown": get_burndown_series(),
+        "difficulty": get_difficulty_breakdown(),
+        "streak": get_streak(),
+    })
+
+
+@app.route("/api/digest")
+def api_digest():
+    rows = digest.get_due_today()
+    configured = bool(digest.RESEND_API_KEY and digest.DIGEST_TO)
+    return jsonify({
+        "rows": [dict(r) for r in rows],
+        "configured": configured,
+        "to_email": digest.DIGEST_TO,
+        "send_time": DIGEST_SEND_TIME,
+        "stage_info": STAGE_INFO,
+    })
+
+
+@app.route("/api/digest/send-now", methods=["POST"])
+def api_digest_send_now():
     digest.send_daily_digest()
-    return redirect(url_for("digest_tab"))
+    return jsonify({"ok": True})
+
+
+@app.route("/", defaults={"path": ""})
+@app.route("/<path:path>")
+def serve_spa(path):
+    if path and os.path.exists(os.path.join(STATIC_DIST, path)):
+        return send_from_directory(STATIC_DIST, path)
+    return send_from_directory(STATIC_DIST, "index.html")
 
 
 def start_scheduler():

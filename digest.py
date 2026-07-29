@@ -30,8 +30,8 @@ def get_due_today():
 def render_email_html(rows):
     if not rows:
         return """
-        <div style="font-family: 'SF Mono', Consolas, monospace; background:#000; color:#e4e4e4; padding:24px;">
-            <h2 style="color:#4ade80; margin-top:0;">1337</h2>
+        <div style="font-family: 'SF Mono', Consolas, monospace; background:#000000; color:#e0e0e0; padding:24px;">
+            <h2 style="color:#ff4444; margin-top:0;">1337</h2>
             <p>Nothing due today. Clean slate — go start a new problem.</p>
         </div>
         """
@@ -40,16 +40,16 @@ def render_email_html(rows):
     for r in rows:
         items += f"""
         <tr>
-            <td style="padding:8px 0; border-bottom:1px solid #262626;">
-                <a href="{r['url']}" style="color:#60a5fa; text-decoration:none;">{r['name']}</a><br>
-                <span style="color:#7a7a7a; font-size:12px;">{r['category']} · {STAGE_LABELS.get(r['stage'], '')}</span>
+            <td style="padding:8px 0; border-bottom:1px solid #222222;">
+                <a href="{r['url']}" style="color:#5a9fd4; text-decoration:none;">{r['name']}</a><br>
+                <span style="color:#666666; font-size:12px;">{r['category']} · {STAGE_LABELS.get(r['stage'], '')}</span>
             </td>
         </tr>
         """
 
     return f"""
-    <div style="font-family: 'SF Mono', Consolas, monospace; background:#000; color:#e4e4e4; padding:24px;">
-        <h2 style="color:#4ade80; margin-top:0;">1337 — {len(rows)} due today</h2>
+    <div style="font-family: 'SF Mono', Consolas, monospace; background:#000000; color:#e0e0e0; padding:24px;">
+        <h2 style="color:#ff4444; margin-top:0;">1337 — {len(rows)} due today</h2>
         <table style="width:100%; border-collapse:collapse;">
             {items}
         </table>
