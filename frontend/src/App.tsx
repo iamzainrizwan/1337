@@ -13,6 +13,12 @@ function PageFallback() {
   return <div className="h-64 animate-pulse rounded-xl bg-bg-alt" />
 }
 
+// Reflects the reverse-proxy prefix (if any) injected server-side into the
+// page's <base href>, so client-side navigation keeps working under a
+// mounted subpath (e.g. nginx `location /1337/`) without a prefix-specific
+// build.
+const basename = new URL(document.baseURI).pathname.replace(/\/$/, "")
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -25,7 +31,7 @@ const queryClient = new QueryClient({
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
+      <BrowserRouter basename={basename}>
         <Routes>
           <Route element={<AppLayout />}>
             <Route

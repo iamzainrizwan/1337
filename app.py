@@ -539,7 +539,18 @@ def api_digest_send_now():
 def serve_spa(path):
     if path and os.path.exists(os.path.join(STATIC_DIST, path)):
         return send_from_directory(STATIC_DIST, path)
-    return send_from_directory(STATIC_DIST, "index.html")
+
+    # The built SPA uses relative asset/API paths (Vite `base: "./"`) so a
+    # single image works both served at "/" and behind a reverse proxy that
+    # mounts it under a stripped path prefix (e.g. nginx `location /1337/`
+    # with `proxy_set_header X-Forwarded-Prefix /1337`). Injecting a <base>
+    # tag reflecting that prefix is what makes those relative references
+    # resolve correctly in either case.
+    prefix = request.headers.get("X-Forwarded-Prefix", "").rstrip("/")
+    with open(os.path.join(STATIC_DIST, "index.html")) as f:
+        html = f.read()
+    html = html.replace("<head>", f'<head>\n    <base href="{prefix}/">', 1)
+    return html, 200, {"Content-Type": "text/html", "Cache-Control": "no-store"}
 
 
 def start_scheduler():

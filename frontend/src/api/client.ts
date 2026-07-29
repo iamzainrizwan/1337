@@ -9,7 +9,10 @@ import type {
 } from "./types"
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`/api${path}`, {
+  // Relative (no leading slash) so it resolves against the page's <base
+  // href> -- which reflects the reverse-proxy prefix, if any -- rather
+  // than always hitting the domain root.
+  const res = await fetch(new URL(`api${path}`, document.baseURI), {
     headers: { "Content-Type": "application/json" },
     ...init,
   })
