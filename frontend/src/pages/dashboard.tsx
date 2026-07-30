@@ -33,6 +33,9 @@ export default function Dashboard() {
 
   const { pacing, today_activity, streak, due, upcoming, suggested, categories, stage_info, today } = data
 
+  const solvedToday = today_activity.filter((a) => a.outcome === "solved")
+  const reviewedToday = today_activity.filter((a) => a.outcome !== "solved")
+
   return (
     <div className="flex flex-col gap-6 sm:gap-8">
       {/* Hero */}
@@ -45,12 +48,21 @@ export default function Dashboard() {
           <CardContent className="flex flex-col gap-6 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-7">
             <div>
               <p className="text-xs uppercase tracking-widest text-fg-dim">Today</p>
-              <div className="mt-1 flex items-baseline gap-2">
-                <AnimatedNumber
-                  value={today_activity.length}
-                  className="font-display text-4xl sm:text-5xl font-bold text-fg-bright"
-                />
-                <span className="text-fg-dim text-sm">problems reviewed today</span>
+              <div className="mt-1 flex flex-wrap items-baseline gap-x-5 gap-y-1">
+                <div className="flex items-baseline gap-2">
+                  <AnimatedNumber
+                    value={solvedToday.length}
+                    className="font-display text-4xl sm:text-5xl font-bold text-fg-bright"
+                  />
+                  <span className="text-fg-dim text-sm">solved for the first time</span>
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <AnimatedNumber
+                    value={reviewedToday.length}
+                    className="font-display text-4xl sm:text-5xl font-bold text-fg-bright"
+                  />
+                  <span className="text-fg-dim text-sm">reviewed</span>
+                </div>
               </div>
               <p className="mt-2 text-xs text-fg-dim tabular">{today}</p>
             </div>
