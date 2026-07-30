@@ -12,7 +12,6 @@ jobs:
     steps:
       - name: deploy app
         run: |
-          git config --global --add safe.directory /opt/services/1337
           cd /opt/services/1337
           git pull
           docker compose up -d --build
