@@ -81,7 +81,7 @@ export function AppLayout() {
   return (
     <div className="flex min-h-screen">
       <DesktopSidebar />
-      <div className="flex min-h-screen flex-1 flex-col">
+      <div className="flex min-h-screen min-w-0 flex-1 flex-col">
         <MobileTopbar />
         <motion.main
           className="flex-1 px-3 sm:px-6 py-4 sm:py-8 pb-24 md:pb-8 max-w-6xl w-full mx-auto"

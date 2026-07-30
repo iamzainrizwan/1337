@@ -32,7 +32,7 @@ export function BurndownChart({ data }: { data: BurndownPoint[] }) {
   return (
     <div className="h-64 sm:h-80 w-full">
       <ResponsiveContainer width="100%" height="100%">
-        <ComposedChart data={data} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
+        <ComposedChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
           <defs>
             <linearGradient id="actualFill" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#ff4444" stopOpacity={0.35} />

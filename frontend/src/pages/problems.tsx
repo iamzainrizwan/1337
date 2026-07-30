@@ -92,7 +92,7 @@ export default function Problems() {
 
       {data && grouped.length === 0 && (
         <div className="rounded-lg border border-border bg-bg-alt/60 p-6 text-center text-fg-dim">
-          No problems match that filter.
+          {search.trim() ? "No problems match that filter." : "No problems in this pool yet."}
         </div>
       )}
     </div>
