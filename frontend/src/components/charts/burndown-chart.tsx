@@ -35,8 +35,8 @@ export function BurndownChart({ data }: { data: BurndownPoint[] }) {
         <ComposedChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
           <defs>
             <linearGradient id="actualFill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#ff4444" stopOpacity={0.35} />
-              <stop offset="100%" stopColor="#ff4444" stopOpacity={0} />
+              <stop offset="0%" stopColor="var(--c-red-bright)" stopOpacity={0.35} />
+              <stop offset="100%" stopColor="var(--c-red-bright)" stopOpacity={0} />
             </linearGradient>
           </defs>
           <CartesianGrid stroke="#222222" strokeDasharray="3 3" vertical={false} />
@@ -54,7 +54,7 @@ export function BurndownChart({ data }: { data: BurndownPoint[] }) {
             type="monotone"
             dataKey="actual"
             name="Actual"
-            stroke="#ff4444"
+            stroke="var(--c-red-bright)"
             strokeWidth={2}
             fill="url(#actualFill)"
             connectNulls

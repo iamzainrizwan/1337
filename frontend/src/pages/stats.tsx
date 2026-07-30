@@ -21,7 +21,7 @@ export default function Stats() {
 
       <Card className="border-red/30">
         <CardContent className="flex items-center gap-4 p-5">
-          <Flame className="size-9 text-red-bright drop-shadow-[0_0_10px_rgba(255,68,68,0.6)]" />
+          <Flame className="size-9 text-red-bright drop-shadow-[0_0_10px_hsl(var(--accent-h)_100%_63%_/_0.6)]" />
           <div>
             <AnimatedNumber value={data.streak} className="font-display text-3xl font-bold text-red-bright" />
             <p className="text-xs text-fg-dim">day streak</p>

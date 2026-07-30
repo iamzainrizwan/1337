@@ -1,10 +1,15 @@
 import { useMemo } from "react"
 import type { Difficulty, DifficultyBucket } from "@/api/types"
 
-const COLORS: Record<string, { track: string; fill: string; text: string }> = {
-  Easy: { track: "#3a6ea533", fill: "#5a9fd4", text: "#5a9fd4" },
-  Medium: { track: "#7c4dff33", fill: "#a67cff", text: "#a67cff" },
-  Hard: { track: "#cc222233", fill: "#ff4444", text: "#ff4444" },
+const COLORS: Record<string, { track: string; fill: string; text: string; glow: string }> = {
+  Easy: { track: "#3a6ea533", fill: "#5a9fd4", text: "#5a9fd4", glow: "#5a9fd480" },
+  Medium: { track: "#7c4dff33", fill: "#a67cff", text: "#a67cff", glow: "#a67cff80" },
+  Hard: {
+    track: "hsl(var(--accent-h) 71% 47% / 0.2)",
+    fill: "var(--c-red-bright)",
+    text: "var(--c-red-bright)",
+    glow: "hsl(var(--accent-h) 100% 63% / 0.5)",
+  },
 }
 
 const ORDER: Difficulty[] = ["Easy", "Medium", "Hard"]
@@ -68,7 +73,7 @@ export function DifficultyGauge({ data }: { data: DifficultyBucket[] }) {
                   strokeWidth={outerR - innerR}
                   fill="none"
                   strokeLinecap="butt"
-                  style={{ filter: `drop-shadow(0 0 6px ${c.fill}80)` }}
+                  style={{ filter: `drop-shadow(0 0 6px ${c.glow})` }}
                 />
               )}
             </g>

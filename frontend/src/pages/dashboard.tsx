@@ -67,7 +67,7 @@ export default function Dashboard() {
               <p className="mt-2 text-xs text-fg-dim tabular">{today}</p>
             </div>
             <div className="flex items-center gap-3 rounded-xl border border-red/30 bg-red/10 px-5 py-4">
-              <Flame className="size-8 text-red-bright drop-shadow-[0_0_10px_rgba(255,68,68,0.6)]" />
+              <Flame className="size-8 text-red-bright drop-shadow-[0_0_10px_hsl(var(--accent-h)_100%_63%_/_0.6)]" />
               <div>
                 <AnimatedNumber value={streak} className="font-display text-3xl font-bold text-red-bright" />
                 <p className="text-xs text-fg-dim">day streak</p>

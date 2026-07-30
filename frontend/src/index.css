@@ -16,9 +16,17 @@
   --c-fg: #e0e0e0;
   --c-fg-bright: #ffffff;
   --c-fg-dim: #666666;
-  --c-red: #cc2222;
-  --c-red-bright: #ff4444;
-  --c-crimson-dark: #8b0000;
+
+  /* Accent triad: one user-picked hue, fixed saturation/lightness stops per
+     shade -- lighter/darker fall out of the formula automatically instead of
+     being separate hardcoded colors. Defaults to 0 (red) matching the
+     original #cc2222/#ff4444/#8b0000 palette; overridden at runtime by
+     lib/accent.ts from a localStorage-persisted preference. */
+  --accent-h: 0;
+  --c-red: hsl(var(--accent-h) 71% 47%);
+  --c-red-bright: hsl(var(--accent-h) 100% 63%);
+  --c-crimson-dark: hsl(var(--accent-h) 100% 27%);
+
   --c-blue: #3a6ea5;
   --c-blue-bright: #5a9fd4;
   --c-purple: #7c4dff;
@@ -103,7 +111,7 @@
   body {
     @apply bg-bg text-fg font-sans antialiased;
     background-image:
-      radial-gradient(ellipse 70% 50% at 50% -10%, rgba(204, 34, 34, 0.08), transparent),
+      radial-gradient(ellipse 70% 50% at 50% -10%, hsl(var(--accent-h) 71% 47% / 0.08), transparent),
       radial-gradient(ellipse 60% 40% at 100% 100%, rgba(124, 77, 255, 0.05), transparent);
     background-attachment: fixed;
   }
@@ -137,10 +145,10 @@
 
 @layer utilities {
   .glow-red {
-    box-shadow: 0 0 0 1px rgba(204, 34, 34, 0.4), 0 0 24px -8px rgba(255, 68, 68, 0.55);
+    box-shadow: 0 0 0 1px hsl(var(--accent-h) 71% 47% / 0.4), 0 0 24px -8px hsl(var(--accent-h) 100% 63% / 0.55);
   }
   .text-glow-red {
-    text-shadow: 0 0 18px rgba(255, 68, 68, 0.45);
+    text-shadow: 0 0 18px hsl(var(--accent-h) 100% 63% / 0.45);
   }
   .tabular {
     font-family: var(--font-mono);

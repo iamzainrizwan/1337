@@ -17,7 +17,7 @@ const LEVEL_CLASSES = [
   "bg-crimson-dark/50 border border-crimson-dark/60",
   "bg-crimson-dark border border-crimson-dark",
   "bg-red border border-red",
-  "bg-red-bright border border-red-bright shadow-[0_0_8px_rgba(255,68,68,0.55)]",
+  "bg-red-bright border border-red-bright shadow-[0_0_8px_hsl(var(--accent-h)_100%_63%_/_0.55)]",
 ]
 
 export function ActivityHeatmap({ activity }: { activity: ActivityDay[] }) {

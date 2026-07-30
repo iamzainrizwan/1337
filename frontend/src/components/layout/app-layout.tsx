@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from "react-router-dom"
 import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
+import { AccentPicker } from "@/components/accent-picker"
 import { NAV_ITEMS } from "./nav-items"
 
 function Logo() {
@@ -29,7 +30,7 @@ function DesktopSidebar() {
             cn(
               "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
               isActive
-                ? "bg-red/15 text-fg-bright shadow-[inset_0_0_0_1px_rgba(204,34,34,0.4)]"
+                ? "bg-red/15 text-fg-bright shadow-[inset_0_0_0_1px_hsl(var(--accent-h)_71%_47%_/_0.4)]"
                 : "text-fg-dim hover:bg-bg-alt hover:text-fg"
             )
           }
@@ -38,6 +39,10 @@ function DesktopSidebar() {
           {label}
         </NavLink>
       ))}
+      <div className="mt-auto flex items-center gap-2 px-1 pt-4">
+        <AccentPicker />
+        <span className="text-xs text-fg-dim">Accent</span>
+      </div>
     </aside>
   )
 }
@@ -46,6 +51,7 @@ function MobileTopbar() {
   return (
     <header className="flex md:hidden items-center justify-between border-b border-border bg-bg-alt/80 px-4 py-3 sticky top-0 z-40 backdrop-blur">
       <Logo />
+      <AccentPicker />
     </header>
   )
 }
@@ -67,7 +73,7 @@ function MobileTabBar() {
         >
           {({ isActive }: { isActive: boolean }) => (
             <>
-              <Icon className={cn("size-5", isActive && "drop-shadow-[0_0_6px_rgba(255,68,68,0.6)]")} />
+              <Icon className={cn("size-5", isActive && "drop-shadow-[0_0_6px_hsl(var(--accent-h)_100%_63%_/_0.6)]")} />
               <span>{label}</span>
             </>
           )}
