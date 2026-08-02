@@ -2,6 +2,7 @@ import { NavLink, Outlet } from "react-router-dom"
 import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
 import { AccentPicker } from "@/components/accent-picker"
+import { TimezonePicker } from "@/components/timezone-picker"
 import { NAV_ITEMS } from "./nav-items"
 
 function Logo() {
@@ -41,7 +42,8 @@ function DesktopSidebar() {
       ))}
       <div className="mt-auto flex items-center gap-2 px-1 pt-4">
         <AccentPicker />
-        <span className="text-xs text-fg-dim">Accent</span>
+        <TimezonePicker />
+        <span className="text-xs text-fg-dim">Accent / Timezone</span>
       </div>
     </aside>
   )
@@ -51,7 +53,10 @@ function MobileTopbar() {
   return (
     <header className="flex md:hidden items-center justify-between border-b border-border bg-bg-alt/80 px-4 py-3 sticky top-0 z-40 backdrop-blur">
       <Logo />
-      <AccentPicker />
+      <div className="flex items-center gap-2">
+        <AccentPicker />
+        <TimezonePicker />
+      </div>
     </header>
   )
 }

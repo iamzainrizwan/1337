@@ -6,6 +6,7 @@ import type {
   Problem,
   ProblemsResponse,
   StatsResponse,
+  TimezoneResponse,
 } from "./types"
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -79,4 +80,12 @@ export const api = {
   digest: () => request<DigestResponse>("/digest"),
 
   sendDigestNow: () => request<{ ok: boolean }>("/digest/send-now", { method: "POST" }),
+
+  getTimezone: () => request<TimezoneResponse>("/settings/timezone"),
+
+  setTimezone: (timezone: string) =>
+    request<TimezoneResponse>("/settings/timezone", {
+      method: "POST",
+      body: JSON.stringify({ timezone }),
+    }),
 }

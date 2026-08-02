@@ -1,7 +1,8 @@
 import math
 import os
 import sqlite3
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
+from zoneinfo import ZoneInfo
 from flask import Flask, g, jsonify, request, send_from_directory
 
 from problems_data import NEETCODE_250, CORE_150_URLS
@@ -17,6 +18,11 @@ STATIC_DIST = os.path.join(os.path.dirname(__file__), "frontend", "dist")
 GOAL_TARGET_DAYS = int(os.environ.get("GOAL_TARGET_DAYS", "60"))
 
 HEATMAP_WEEKS = 13
+
+# The app's "day" runs from 3am to 3am rather than midnight to midnight, so
+# a late-night session before bed still counts toward "today" instead of
+# rolling over into tomorrow.
+DAY_START_HOUR = 3
 
 # stage -> (label, days until next review after completing this stage)
 STAGE_INFO = {
@@ -109,14 +115,19 @@ def init_db():
                 """, (name, category, difficulty, link, order_index, pool))
             order_index += 1
 
+    # Timezone: seeded from the container's TZ env var, freely editable
+    # afterward via POST /api/settings/timezone.
+    if db.execute("SELECT 1 FROM settings WHERE key = 'timezone'").fetchone() is None:
+        db.execute("INSERT INTO settings (key, value) VALUES ('timezone', ?)", (os.environ.get("TZ", "UTC"),))
+
     # Goal start date: set once, on first ever run, and never touched again.
     if db.execute("SELECT 1 FROM settings WHERE key = 'goal_start_date'").fetchone() is None:
-        db.execute("INSERT INTO settings (key, value) VALUES ('goal_start_date', ?)", (today_str(),))
+        db.execute("INSERT INTO settings (key, value) VALUES ('goal_start_date', ?)", (today_str(db),))
 
     # target_date seeded once off goal_start_date + GOAL_TARGET_DAYS, then
     # freely editable afterward via PATCH /api/goal.
     if db.execute("SELECT 1 FROM settings WHERE key = 'target_date'").fetchone() is None:
-        start = date.fromisoformat(get_setting_raw(db, "goal_start_date", today_str()))
+        start = date.fromisoformat(get_setting_raw(db, "goal_start_date", today_str(db)))
         seeded_target = (start + timedelta(days=GOAL_TARGET_DAYS)).isoformat()
         db.execute("INSERT INTO settings (key, value) VALUES ('target_date', ?)", (seeded_target,))
 
@@ -129,12 +140,31 @@ def get_setting_raw(db, key, default=None):
     return row["value"] if row else default
 
 
-def today_str():
-    return date.today().isoformat()
-
-
 def get_setting(key, default=None):
     return get_setting_raw(get_db(), key, default)
+
+
+def get_timezone_name(db=None):
+    if db is None:
+        db = get_db()
+    return get_setting_raw(db, "timezone", os.environ.get("TZ", "UTC"))
+
+
+def local_now(db=None):
+    return datetime.now(ZoneInfo(get_timezone_name(db)))
+
+
+def today_str(db=None):
+    """The app's 'today', in the configured timezone, with the day boundary
+    at DAY_START_HOUR instead of midnight."""
+    now = local_now(db)
+    if now.hour < DAY_START_HOUR:
+        now -= timedelta(days=1)
+    return now.date().isoformat()
+
+
+def local_today(db=None):
+    return date.fromisoformat(today_str(db))
 
 
 def row_to_dict(row):
@@ -160,8 +190,19 @@ def get_pacing():
         WHERE p.pool = 'core' AND pr.status = 'mastered'
     """).fetchone()[0]
 
+    actual_weighted = db.execute("""
+        SELECT COALESCE(SUM(CASE
+            WHEN pr.status = 'mastered' THEN 4
+            WHEN pr.stage = 3 THEN 3
+            WHEN pr.stage = 2 THEN 2
+            WHEN pr.stage = 1 THEN 1
+            ELSE 0 END), 0)
+        FROM progress pr JOIN problems p ON p.id = pr.problem_id
+        WHERE p.pool = 'core'
+    """).fetchone()[0]
+
     remaining_unstarted = max(target_count - actual_started, 0)
-    days_remaining = max((target_date - date.today()).days, 1)
+    days_remaining = max((target_date - local_today()).days, 1)
     required_rate_today = remaining_unstarted / days_remaining
 
     suggested_new_count = min(math.ceil(required_rate_today), remaining_unstarted)
@@ -175,10 +216,11 @@ def get_pacing():
         "required_rate_today": required_rate_today,
         "actual_started": actual_started,
         "actual_mastered": actual_mastered,
+        "actual_weighted": actual_weighted,
         "remaining_unstarted": remaining_unstarted,
         "suggested_new_count": suggested_new_count,
         "unrealistic": unrealistic,
-        "past_deadline": date.today() > target_date,
+        "past_deadline": local_today() > target_date,
     }
 
 
@@ -197,7 +239,7 @@ def get_suggested_new_problems(count):
 
 def get_activity_by_day(weeks=HEATMAP_WEEKS):
     db = get_db()
-    start = date.today() - timedelta(days=weeks * 7 - 1)
+    start = local_today() - timedelta(days=weeks * 7 - 1)
     rows = db.execute("""
         SELECT completed_at AS day, COUNT(*) AS c
         FROM review_log
@@ -212,15 +254,27 @@ def get_activity_by_day(weeks=HEATMAP_WEEKS):
 
 
 def get_streak():
+    """Walk backward from today counting consecutive active days. One missed
+    day doesn't break the streak once every 7 days survived so far -- a
+    longer streak banks more forgiveness (21 days survived = 3 banked
+    skips), so the grace grows with the streak instead of being a flat
+    one-time allowance."""
     activity = get_activity_by_day(weeks=HEATMAP_WEEKS)
     streak = 0
+    days_elapsed = 0
+    misses_used = 0
     for day in reversed(activity):
         if day["date"] > today_str():
             continue
+        days_elapsed += 1
         if day["count"] > 0:
             streak += 1
-        else:
-            break
+            continue
+        allowed = days_elapsed // 7
+        if misses_used < allowed:
+            misses_used += 1
+            continue
+        break
     return streak
 
 
@@ -244,7 +298,7 @@ def get_burndown_series():
     by_day = {r["day"]: r["c"] for r in rows}
     series = []
     day = start_date
-    today = date.today()
+    today = local_today()
     while day <= max(target_date, today):
         cumulative += by_day.get(day.isoformat(), 0)
         elapsed = (day - start_date).days
@@ -312,7 +366,13 @@ def api_dashboard():
     categories = db.execute("""
         SELECT p.category,
                COUNT(*) AS total,
-               SUM(CASE WHEN pr.status = 'mastered' THEN 1 ELSE 0 END) AS mastered
+               SUM(CASE WHEN pr.status = 'mastered' THEN 1 ELSE 0 END) AS mastered,
+               SUM(CASE
+                   WHEN pr.status = 'mastered' THEN 4
+                   WHEN pr.stage = 3 THEN 3
+                   WHEN pr.stage = 2 THEN 2
+                   WHEN pr.stage = 1 THEN 1
+                   ELSE 0 END) AS weighted
         FROM problems p
         LEFT JOIN progress pr ON pr.problem_id = p.id
         WHERE p.pool = 'core'
@@ -384,7 +444,7 @@ def api_update_tags(problem_id):
 def api_mark_solved(problem_id):
     db = get_db()
     today = today_str()
-    next_review = (date.today() + timedelta(days=STAGE_INFO[1]["next_gap"])).isoformat()
+    next_review = (local_today() + timedelta(days=STAGE_INFO[1]["next_gap"])).isoformat()
 
     db.execute("""
         INSERT INTO progress (problem_id, status, stage, first_solved_at, next_review_at, last_action_at)
@@ -417,7 +477,7 @@ def api_complete_review(problem_id, action):
     )
 
     if action == "struggled":
-        next_review = (date.today() + timedelta(days=STAGE_INFO[1]["next_gap"])).isoformat()
+        next_review = (local_today() + timedelta(days=STAGE_INFO[1]["next_gap"])).isoformat()
         db.execute("""
             UPDATE progress SET stage = 1, next_review_at = ?, last_action_at = ?, status = 'reviewing'
             WHERE problem_id = ?
@@ -431,7 +491,7 @@ def api_complete_review(problem_id, action):
             """, (today, problem_id))
         else:
             gap = STAGE_INFO[next_stage]["next_gap"]
-            next_review = (date.today() + timedelta(days=gap)).isoformat()
+            next_review = (local_today() + timedelta(days=gap)).isoformat()
             db.execute("""
                 UPDATE progress SET stage = ?, next_review_at = ?, last_action_at = ?
                 WHERE problem_id = ?
@@ -505,6 +565,21 @@ def api_goal():
     return jsonify(get_pacing())
 
 
+@app.route("/api/settings/timezone", methods=["GET", "POST"])
+def api_timezone():
+    db = get_db()
+    if request.method == "POST":
+        data = request.get_json(force=True)
+        tz = data["timezone"]
+        ZoneInfo(tz)  # raises if not a real IANA name
+        db.execute("""
+            INSERT INTO settings (key, value) VALUES ('timezone', ?)
+            ON CONFLICT(key) DO UPDATE SET value = ?
+        """, (tz, tz))
+        db.commit()
+    return jsonify({"timezone": get_timezone_name(db)})
+
+
 @app.route("/api/stats")
 def api_stats():
     return jsonify({
@@ -555,11 +630,16 @@ def serve_spa(path):
 
 def start_scheduler():
     from apscheduler.schedulers.background import BackgroundScheduler
+    bootstrap_db = sqlite3.connect(DB_PATH)
+    bootstrap_db.row_factory = sqlite3.Row
+    tz_name = get_timezone_name(bootstrap_db)
+    bootstrap_db.close()
+
     hour, minute = (int(x) for x in DIGEST_SEND_TIME.split(":"))
     scheduler = BackgroundScheduler()
-    scheduler.add_job(digest.send_daily_digest, "cron", hour=hour, minute=minute)
+    scheduler.add_job(digest.send_daily_digest, "cron", hour=hour, minute=minute, timezone=ZoneInfo(tz_name))
     scheduler.start()
-    print(f"[1337] Daily digest scheduled for {DIGEST_SEND_TIME}.")
+    print(f"[1337] Daily digest scheduled for {DIGEST_SEND_TIME} ({tz_name}).")
 
 
 init_db()

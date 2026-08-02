@@ -1,6 +1,7 @@
 import os
 import sqlite3
-from datetime import date
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 import resend
 
@@ -12,11 +13,24 @@ DIGEST_FROM = os.environ.get("DIGEST_FROM_EMAIL", "onboarding@resend.dev")
 
 STAGE_LABELS = {1: "Day 1 review", 2: "Week 1 review", 3: "3 Week review"}
 
+# Kept in sync with app.py's DAY_START_HOUR -- digest.py deliberately keeps
+# its own DB connection rather than sharing app.py's Flask-bound helpers.
+DAY_START_HOUR = 3
+
+
+def today_str(db):
+    tz_name = db.execute("SELECT value FROM settings WHERE key = 'timezone'").fetchone()
+    tz_name = tz_name["value"] if tz_name else os.environ.get("TZ", "UTC")
+    now = datetime.now(ZoneInfo(tz_name))
+    if now.hour < DAY_START_HOUR:
+        now -= timedelta(days=1)
+    return now.date().isoformat()
+
 
 def get_due_today():
     db = sqlite3.connect(DB_PATH)
     db.row_factory = sqlite3.Row
-    today = date.today().isoformat()
+    today = today_str(db)
     rows = db.execute("""
         SELECT p.name, p.category, p.difficulty, p.url, pr.stage, pr.next_review_at
         FROM progress pr JOIN problems p ON p.id = pr.problem_id

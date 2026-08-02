@@ -84,3 +84,19 @@ export function useSetGoal() {
 export function useSendDigestNow() {
   return useMutation({ mutationFn: api.sendDigestNow })
 }
+
+export function useTimezone() {
+  return useQuery({ queryKey: ["timezone"], queryFn: api.getTimezone })
+}
+
+export function useSetTimezone() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: api.setTimezone,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["timezone"] })
+      qc.invalidateQueries({ queryKey: ["dashboard"] })
+      qc.invalidateQueries({ queryKey: ["stats"] })
+    },
+  })
+}

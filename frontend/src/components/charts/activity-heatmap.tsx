@@ -54,7 +54,7 @@ export function ActivityHeatmap({ activity }: { activity: ActivityDay[] }) {
   }, [activity])
 
   return (
-    <div className="scroll-thin overflow-x-auto pb-1">
+    <div className="scroll-thin flex justify-center overflow-x-auto pb-1">
       <div className="inline-flex flex-col gap-1 min-w-max">
         <div className="flex gap-[3px] pl-7 text-[10px] text-fg-dim">
           {weeks.map((_, wi) => {

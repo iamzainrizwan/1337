@@ -1,6 +1,6 @@
 import type { ReactNode } from "react"
 import { motion } from "framer-motion"
-import { AlertTriangle, Flame, Sparkles } from "lucide-react"
+import { AlertTriangle, Flame } from "lucide-react"
 import { useDashboard } from "@/hooks/use-api"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
@@ -101,7 +101,7 @@ export default function Dashboard() {
             <Stat label="Unstarted (core)" value={String(pacing.remaining_unstarted)} />
           </div>
           <Progress
-            value={(pacing.actual_mastered / Math.max(pacing.target_count, 1)) * 100}
+            value={(pacing.actual_weighted / Math.max(pacing.target_count * 4, 1)) * 100}
             indicatorClassName="bg-blue-bright"
           />
           <p className="text-xs text-fg-dim tabular">
@@ -119,13 +119,7 @@ export default function Dashboard() {
 
       {/* Suggested new problems */}
       {suggested.length > 0 && (
-        <Section
-          title={
-            <span className="flex items-center gap-1.5">
-              <Sparkles className="size-4 text-purple-bright" /> Suggested new problems
-            </span>
-          }
-        >
+        <Section title="Suggested new problems">
           {suggested.map((p) => (
             <ProblemRow key={p.id} problem={p} stageInfo={stage_info} today={today} />
           ))}
@@ -153,7 +147,7 @@ export default function Dashboard() {
                   {c.mastered}/{c.total}
                 </span>
               </div>
-              <Progress value={(c.mastered / Math.max(c.total, 1)) * 100} indicatorClassName="bg-purple" />
+              <Progress value={(c.weighted / Math.max(c.total * 4, 1)) * 100} indicatorClassName="bg-purple" />
             </div>
           ))}
         </CardContent>

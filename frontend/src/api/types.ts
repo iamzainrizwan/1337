@@ -36,6 +36,7 @@ export interface Pacing {
   required_rate_today: number
   actual_started: number
   actual_mastered: number
+  actual_weighted: number
   remaining_unstarted: number
   suggested_new_count: number
   unrealistic: boolean
@@ -46,6 +47,7 @@ export interface CategoryProgress {
   category: string
   total: number
   mastered: number
+  weighted: number
 }
 
 export interface DashboardResponse {
@@ -113,4 +115,8 @@ export interface DigestResponse {
   to_email: string | null
   send_time: string
   stage_info: StageInfo
+}
+
+export interface TimezoneResponse {
+  timezone: string
 }
