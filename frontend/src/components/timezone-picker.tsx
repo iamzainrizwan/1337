@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { Globe } from "lucide-react"
 import {
   Dialog,
@@ -10,6 +10,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useSetTimezone, useTimezone } from "@/hooks/use-api"
@@ -21,9 +22,16 @@ const TIMEZONES =
 
 export function TimezonePicker({ className }: { className?: string }) {
   const [open, setOpen] = useState(false)
+  const [search, setSearch] = useState("")
   const { data } = useTimezone()
   const [tz, setTz] = useState(data?.timezone ?? BROWSER_TIMEZONE)
   const setTimezone = useSetTimezone()
+
+  const filteredTimezones = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return TIMEZONES
+    return TIMEZONES.filter((name) => name.toLowerCase().includes(q))
+  }, [search])
 
   return (
     <Dialog
@@ -56,16 +64,36 @@ export function TimezonePicker({ className }: { className?: string }) {
 
         <div className="flex flex-col gap-2">
           <Label htmlFor="timezone-select">Timezone</Label>
-          <Select value={tz} onValueChange={setTz}>
+          <Select
+            value={tz}
+            onValueChange={setTz}
+            onOpenChange={(next) => {
+              if (!next) setSearch("")
+            }}
+          >
             <SelectTrigger id="timezone-select">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {TIMEZONES.map((name) => (
-                <SelectItem key={name} value={name}>
-                  {name}
-                </SelectItem>
-              ))}
+              <div className="sticky top-0 z-10 bg-card p-1">
+                <Input
+                  autoFocus
+                  placeholder="Search timezones…"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  onKeyDown={(e) => e.stopPropagation()}
+                  className="h-8"
+                />
+              </div>
+              {filteredTimezones.length === 0 ? (
+                <div className="px-2 py-4 text-center text-xs text-fg-dim">No matching timezones</div>
+              ) : (
+                filteredTimezones.map((name) => (
+                  <SelectItem key={name} value={name}>
+                    {name}
+                  </SelectItem>
+                ))
+              )}
             </SelectContent>
           </Select>
         </div>

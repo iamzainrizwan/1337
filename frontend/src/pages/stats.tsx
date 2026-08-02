@@ -31,7 +31,9 @@ export default function Stats() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Activity, last 13 weeks</CardTitle>
+          <CardTitle>
+            Activity{data.activity.length > 0 ? ` since ${data.activity[0].date}` : ""}
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <ActivityHeatmap activity={data.activity} />

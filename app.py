@@ -17,8 +17,6 @@ STATIC_DIST = os.path.join(os.path.dirname(__file__), "frontend", "dist")
 # afterward is settings.target_date, editable at runtime.
 GOAL_TARGET_DAYS = int(os.environ.get("GOAL_TARGET_DAYS", "60"))
 
-HEATMAP_WEEKS = 13
-
 # The app's "day" runs from 3am to 3am rather than midnight to midnight, so
 # a late-night session before bed still counts toward "today" instead of
 # rolling over into tomorrow.
@@ -237,9 +235,22 @@ def get_suggested_new_problems(count):
     """, (count,)).fetchall()
 
 
-def get_activity_by_day(weeks=HEATMAP_WEEKS):
+def get_first_activity_date(db=None):
+    if db is None:
+        db = get_db()
+    row = db.execute("SELECT MIN(completed_at) AS d FROM review_log").fetchone()
+    return date.fromisoformat(row["d"]) if row and row["d"] else None
+
+
+def get_activity_by_day():
+    """Full history from the first-ever solve/review to today, rather than a
+    fixed lookback window -- so the heatmap reflects the whole journey and
+    the streak's grace-period math (see get_streak) isn't silently
+    truncated by an arbitrary cutoff."""
     db = get_db()
-    start = local_today() - timedelta(days=weeks * 7 - 1)
+    today = local_today()
+    start = get_first_activity_date(db) or today
+    days = (today - start).days + 1
     rows = db.execute("""
         SELECT completed_at AS day, COUNT(*) AS c
         FROM review_log
@@ -249,7 +260,7 @@ def get_activity_by_day(weeks=HEATMAP_WEEKS):
     counts = {r["day"]: r["c"] for r in rows}
     return [
         {"date": (start + timedelta(days=i)).isoformat(), "count": counts.get((start + timedelta(days=i)).isoformat(), 0)}
-        for i in range(weeks * 7)
+        for i in range(days)
     ]
 
 
@@ -258,8 +269,11 @@ def get_streak():
     day doesn't break the streak once every 7 days survived so far -- a
     longer streak banks more forgiveness (21 days survived = 3 banked
     skips), so the grace grows with the streak instead of being a flat
-    one-time allowance."""
-    activity = get_activity_by_day(weeks=HEATMAP_WEEKS)
+    one-time allowance. Runs over the full activity history (see
+    get_activity_by_day), so this self-corrects retroactively across any
+    past gap once it qualifies for the grace period -- there's no stored
+    streak counter to get stuck in a stale, already-broken state."""
+    activity = get_activity_by_day()
     streak = 0
     days_elapsed = 0
     misses_used = 0
