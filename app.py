@@ -266,13 +266,14 @@ def get_activity_by_day():
 
 def get_streak():
     """Walk backward from today counting consecutive active days. One missed
-    day doesn't break the streak once every 7 days survived so far -- a
-    longer streak banks more forgiveness (21 days survived = 3 banked
-    skips), so the grace grows with the streak instead of being a flat
-    one-time allowance. Runs over the full activity history (see
-    get_activity_by_day), so this self-corrects retroactively across any
-    past gap once it qualifies for the grace period -- there's no stored
-    streak counter to get stuck in a stale, already-broken state."""
+    day is forgiven within the first 7 days of a run, with another banked
+    skip for every further 7 days survived (21 days survived = 3 banked
+    skips) -- so a longer streak has more forgiveness, but even a brand-new
+    one gets its first skip right away instead of having to earn it first.
+    Runs over the full activity history (see get_activity_by_day), so this
+    self-corrects retroactively across any past gap once it qualifies for
+    the grace period -- there's no stored streak counter to get stuck in a
+    stale, already-broken state."""
     activity = get_activity_by_day()
     streak = 0
     days_elapsed = 0
@@ -284,7 +285,7 @@ def get_streak():
         if day["count"] > 0:
             streak += 1
             continue
-        allowed = days_elapsed // 7
+        allowed = (days_elapsed + 6) // 7  # ceil(days_elapsed / 7)
         if misses_used < allowed:
             misses_used += 1
             continue
