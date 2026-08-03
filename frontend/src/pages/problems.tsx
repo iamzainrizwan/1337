@@ -1,12 +1,15 @@
-import { useMemo, useState } from "react"
-import { Search } from "lucide-react"
+import { useCallback, useMemo, useRef, useState } from "react"
+import { ChevronDown, ChevronsDownUp, ChevronsUpDown, Search } from "lucide-react"
 import { useProblems } from "@/hooks/use-api"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Progress } from "@/components/ui/progress"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { ProblemRow } from "@/components/problem-row"
 import { TagEditor } from "@/components/tag-editor"
 import { AddProblemDialog } from "@/components/add-problem-dialog"
+import { cn } from "@/lib/utils"
 
 const POOLS = [
   { value: "core", label: "Core 150" },
@@ -18,7 +21,11 @@ const POOLS = [
 export default function Problems() {
   const [pool, setPool] = useState("core")
   const [search, setSearch] = useState("")
+  const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const { data, isLoading, isError } = useProblems(pool)
+  const sectionRefs = useRef<Map<string, HTMLDivElement>>(new Map())
+
+  const isSearching = search.trim() !== ""
 
   const grouped = useMemo(() => {
     if (!data) return []
@@ -35,6 +42,23 @@ export default function Problems() {
     }
     return Array.from(map.entries())
   }, [data, search])
+
+  const toggleCategory = useCallback((category: string) => {
+    setExpanded((prev) => {
+      const next = new Set(prev)
+      if (next.has(category)) next.delete(category)
+      else next.add(category)
+      return next
+    })
+  }, [])
+
+  const jumpToCategory = useCallback((category: string) => {
+    setExpanded((prev) => new Set(prev).add(category))
+    // Wait for the section to expand before scrolling to it.
+    requestAnimationFrame(() => {
+      sectionRefs.current.get(category)?.scrollIntoView({ behavior: "smooth", block: "start" })
+    })
+  }, [])
 
   return (
     <div className="flex flex-col gap-5">
@@ -63,32 +87,100 @@ export default function Problems() {
         />
       </div>
 
+      {data && grouped.length > 0 && (
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <div className="flex flex-1 flex-wrap gap-1.5">
+            {grouped.map(([category, problems]) => {
+              const mastered = problems.filter((p) => p.status === "mastered").length
+              return (
+                <button
+                  key={category}
+                  onClick={() => jumpToCategory(category)}
+                  className="rounded-full border border-border bg-bg-alt/60 px-2.5 py-1 text-xs font-medium text-fg-dim transition-colors hover:border-red/40 hover:text-fg-bright"
+                >
+                  {category}
+                  <span className="ml-1 tabular text-fg-dim/70">
+                    {mastered}/{problems.length}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="shrink-0 gap-1.5"
+            onClick={() =>
+              setExpanded((prev) =>
+                prev.size === grouped.length ? new Set() : new Set(grouped.map(([category]) => category))
+              )
+            }
+          >
+            {expanded.size === grouped.length ? (
+              <>
+                <ChevronsDownUp className="size-3.5" />
+                Collapse all
+              </>
+            ) : (
+              <>
+                <ChevronsUpDown className="size-3.5" />
+                Expand all
+              </>
+            )}
+          </Button>
+        </div>
+      )}
+
       {isLoading && <div className="h-64 animate-pulse rounded-xl bg-bg-alt" />}
       {isError && (
         <div className="rounded-lg border border-red/40 bg-red/10 p-4 text-red-bright">Failed to load problems.</div>
       )}
 
       {data &&
-        grouped.map(([category, problems]) => (
-          <Card key={category}>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>{category}</span>
-                <span className="tabular text-xs text-fg-dim">{problems.length}</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-2">
-              {problems.map((p) => (
-                <div key={p.id} className="flex flex-col gap-2">
-                  <ProblemRow problem={p} stageInfo={data.stage_info} />
-                  <div className="px-3">
-                    <TagEditor id={p.id} tags={p.company_tags} />
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        ))}
+        grouped.map(([category, problems]) => {
+          const mastered = problems.filter((p) => p.status === "mastered").length
+          const isOpen = isSearching || expanded.has(category)
+          return (
+            <Card
+              key={category}
+              ref={(el) => {
+                if (el) sectionRefs.current.set(category, el)
+                else sectionRefs.current.delete(category)
+              }}
+            >
+              <CardHeader>
+                <button
+                  className="font-display flex w-full items-center justify-between gap-3 text-left text-base font-semibold text-fg-bright sm:text-lg"
+                  onClick={() => toggleCategory(category)}
+                  aria-expanded={isOpen}
+                >
+                  <span className="flex min-w-0 items-center gap-2">
+                    <ChevronDown className={cn("size-4 shrink-0 text-fg-dim transition-transform", !isOpen && "-rotate-90")} />
+                    <span className="truncate">{category}</span>
+                  </span>
+                  <span className="flex shrink-0 items-center gap-2">
+                    <span className="tabular text-xs text-fg-dim">
+                      {mastered}/{problems.length}
+                    </span>
+                    <Progress value={(mastered / problems.length) * 100} className="hidden w-16 sm:block" />
+                  </span>
+                </button>
+              </CardHeader>
+              {isOpen && (
+                <CardContent className="flex flex-col gap-2">
+                  {problems.map((p) => (
+                    <div key={p.id} className="flex flex-col gap-2">
+                      <ProblemRow problem={p} stageInfo={data.stage_info} />
+                      <div className="px-3">
+                        <TagEditor id={p.id} tags={p.company_tags} />
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              )}
+            </Card>
+          )
+        })}
 
       {data && grouped.length === 0 && (
         <div className="rounded-lg border border-border bg-bg-alt/60 p-6 text-center text-fg-dim">
