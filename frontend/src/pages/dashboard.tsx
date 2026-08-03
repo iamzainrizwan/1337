@@ -1,6 +1,7 @@
 import type { ReactNode } from "react"
+import { useState } from "react"
 import { motion } from "framer-motion"
-import { AlertTriangle, Flame } from "lucide-react"
+import { AlertTriangle, ChevronDown, Flame } from "lucide-react"
 import { useDashboard } from "@/hooks/use-api"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
@@ -8,6 +9,7 @@ import { AnimatedNumber } from "@/components/animated-number"
 import { ProblemRow } from "@/components/problem-row"
 import { GoalDialog } from "@/components/goal-dialog"
 import { Badge } from "@/components/ui/badge"
+import { cn } from "@/lib/utils"
 
 function Skeleton() {
   return (
@@ -77,7 +79,22 @@ export default function Dashboard() {
         </Card>
       </motion.div>
 
-      {/* Pacing */}
+      {/* Reviews: due now, plus a collapsed peek at what's coming up */}
+      <Section title={`Due today (${due.length})`} empty="Nothing due today. Clean slate.">
+        {due.map((p) => (
+          <ProblemRow key={p.id} problem={p} stageInfo={stage_info} today={today} />
+        ))}
+      </Section>
+
+      <CollapsibleSection title="Upcoming reviews" count={upcoming.length}>
+        {upcoming.length > 0 ? (
+          upcoming.map((p) => <ProblemRow key={p.id} problem={p} stageInfo={stage_info} today={today} />)
+        ) : (
+          <Badge variant="outline">No upcoming reviews scheduled.</Badge>
+        )}
+      </CollapsibleSection>
+
+      {/* Progress: pacing stays visible (it surfaces the unrealistic-pace warning), category breakdown collapsed */}
       <Card>
         <CardHeader className="flex-row items-center justify-between">
           <CardTitle>Pace to goal</CardTitle>
@@ -110,35 +127,8 @@ export default function Dashboard() {
         </CardContent>
       </Card>
 
-      {/* Due today */}
-      <Section title={`Due today (${due.length})`} empty="Nothing due today. Clean slate.">
-        {due.map((p) => (
-          <ProblemRow key={p.id} problem={p} stageInfo={stage_info} today={today} />
-        ))}
-      </Section>
-
-      {/* Suggested new problems */}
-      {suggested.length > 0 && (
-        <Section title="Suggested new problems">
-          {suggested.map((p) => (
-            <ProblemRow key={p.id} problem={p} stageInfo={stage_info} today={today} />
-          ))}
-        </Section>
-      )}
-
-      {/* Upcoming */}
-      <Section title="Upcoming reviews" empty="No upcoming reviews scheduled.">
-        {upcoming.map((p) => (
-          <ProblemRow key={p.id} problem={p} stageInfo={stage_info} today={today} />
-        ))}
-      </Section>
-
-      {/* Category progress */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Category progress</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4">
+      <CollapsibleSection title="Category progress" count={categories.length}>
+        <div className="flex flex-col gap-4">
           {categories.map((c) => (
             <div key={c.category} className="flex flex-col gap-1.5">
               <div className="flex items-center justify-between text-sm">
@@ -150,8 +140,17 @@ export default function Dashboard() {
               <Progress value={(c.weighted / Math.max(c.total * 4, 1)) * 100} indicatorClassName="bg-purple" />
             </div>
           ))}
-        </CardContent>
-      </Card>
+        </div>
+      </CollapsibleSection>
+
+      {/* New problems */}
+      {suggested.length > 0 && (
+        <Section title="Suggested new problems">
+          {suggested.map((p) => (
+            <ProblemRow key={p.id} problem={p} stageInfo={stage_info} today={today} />
+          ))}
+        </Section>
+      )}
     </div>
   )
 }
@@ -204,6 +203,36 @@ function Section({
       <CardContent className="flex flex-col gap-2">
         {hasContent ? children : <Badge variant="outline">{empty ?? "Nothing here."}</Badge>}
       </CardContent>
+    </Card>
+  )
+}
+
+function CollapsibleSection({
+  title,
+  count,
+  children,
+}: {
+  title: ReactNode
+  count: number
+  children: ReactNode
+}) {
+  const [open, setOpen] = useState(false)
+  return (
+    <Card>
+      <CardHeader>
+        <button
+          className="font-display flex w-full items-center justify-between gap-3 text-left text-base font-semibold text-fg-bright sm:text-lg"
+          onClick={() => setOpen((o) => !o)}
+          aria-expanded={open}
+        >
+          <span className="flex items-center gap-2">
+            <ChevronDown className={cn("size-4 shrink-0 text-fg-dim transition-transform", !open && "-rotate-90")} />
+            {title}
+          </span>
+          <span className="tabular text-xs text-fg-dim">{count}</span>
+        </button>
+      </CardHeader>
+      {open && <CardContent className="flex flex-col gap-2">{children}</CardContent>}
     </Card>
   )
 }
