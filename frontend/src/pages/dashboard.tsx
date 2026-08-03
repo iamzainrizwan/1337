@@ -79,21 +79,6 @@ export default function Dashboard() {
         </Card>
       </motion.div>
 
-      {/* Reviews: due now, plus a collapsed peek at what's coming up */}
-      <Section title={`Due today (${due.length})`} empty="Nothing due today. Clean slate.">
-        {due.map((p) => (
-          <ProblemRow key={p.id} problem={p} stageInfo={stage_info} today={today} />
-        ))}
-      </Section>
-
-      <CollapsibleSection title="Upcoming reviews" count={upcoming.length}>
-        {upcoming.length > 0 ? (
-          upcoming.map((p) => <ProblemRow key={p.id} problem={p} stageInfo={stage_info} today={today} />)
-        ) : (
-          <Badge variant="outline">No upcoming reviews scheduled.</Badge>
-        )}
-      </CollapsibleSection>
-
       {/* Progress: pacing stays visible (it surfaces the unrealistic-pace warning), category breakdown collapsed */}
       <Card>
         <CardHeader className="flex-row items-center justify-between">
@@ -143,6 +128,13 @@ export default function Dashboard() {
         </div>
       </CollapsibleSection>
 
+      {/* Reviews today */}
+      <Section title={`Due today (${due.length})`} empty="Nothing due today. Clean slate.">
+        {due.map((p) => (
+          <ProblemRow key={p.id} problem={p} stageInfo={stage_info} today={today} />
+        ))}
+      </Section>
+
       {/* New problems */}
       {suggested.length > 0 && (
         <Section title="Suggested new problems">
@@ -151,6 +143,15 @@ export default function Dashboard() {
           ))}
         </Section>
       )}
+
+      {/* Upcoming reviews: rarely needed, so it lives at the very bottom, collapsed */}
+      <CollapsibleSection title="Upcoming reviews" count={upcoming.length}>
+        {upcoming.length > 0 ? (
+          upcoming.map((p) => <ProblemRow key={p.id} problem={p} stageInfo={stage_info} today={today} />)
+        ) : (
+          <Badge variant="outline">No upcoming reviews scheduled.</Badge>
+        )}
+      </CollapsibleSection>
     </div>
   )
 }
