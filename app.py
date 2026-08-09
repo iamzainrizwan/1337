@@ -450,8 +450,8 @@ def api_dashboard():
     suggested = get_suggested_new_problems(pacing["suggested_new_count"])
 
     return jsonify({
-        "due": [dict(r) for r in due],
-        "upcoming": [dict(r) for r in upcoming],
+        "due": _attach_companies(db, due),
+        "upcoming": _attach_companies(db, upcoming),
         "totals": totals,
         "mastered": mastered,
         "in_progress": in_progress,
@@ -459,7 +459,7 @@ def api_dashboard():
         "stage_info": STAGE_INFO,
         "today": today,
         "pacing": pacing,
-        "suggested": [dict(r) for r in suggested],
+        "suggested": _attach_companies(db, suggested),
         "today_activity": get_today_activity(),
         "streak": get_streak(),
     })
@@ -479,6 +479,16 @@ def _companies_by_problem(db):
     return by_problem
 
 
+def _attach_companies(db, rows):
+    """Every API response containing a Problem must include `companies` --
+    the frontend type declares it as always-present, not optional."""
+    companies_by_problem = _companies_by_problem(db)
+    result = [dict(r) for r in rows]
+    for p in result:
+        p["companies"] = companies_by_problem.get(p["id"], [])
+    return result
+
+
 @app.route("/api/problems")
 def api_problems():
     db = get_db()
@@ -490,11 +500,7 @@ def api_problems():
         WHERE (? = 'all' OR p.pool = ?)
         ORDER BY p.order_index ASC
     """, (pool_filter, pool_filter)).fetchall()
-    companies_by_problem = _companies_by_problem(db)
-    problems = [dict(r) for r in rows]
-    for p in problems:
-        p["companies"] = companies_by_problem.get(p["id"], [])
-    return jsonify({"problems": problems, "stage_info": STAGE_INFO})
+    return jsonify({"problems": _attach_companies(db, rows), "stage_info": STAGE_INFO})
 
 
 @app.route("/api/problems/add", methods=["POST"])
@@ -652,7 +658,7 @@ def api_backfill_candidates():
         WHERE pr.status IS NULL OR pr.status != 'mastered'
         ORDER BY p.order_index ASC
     """).fetchall()
-    return jsonify({"problems": [dict(r) for r in rows], "today": today_str()})
+    return jsonify({"problems": _attach_companies(db, rows), "today": today_str()})
 
 
 @app.route("/api/backfill", methods=["POST"])

@@ -1,6 +1,7 @@
 import { ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { DifficultyBadge, StatusBadge } from "@/components/problem-badges"
+import { CompanyChips } from "@/components/company-chips"
 import { useReview, useSolve } from "@/hooks/use-api"
 import type { Problem, StageInfo } from "@/api/types"
 import { cn } from "@/lib/utils"
@@ -14,11 +15,13 @@ export function ProblemRow({
   problem,
   stageInfo,
   today,
+  editable = false,
   className,
 }: {
   problem: Problem
   stageInfo?: StageInfo
   today?: string
+  editable?: boolean
   className?: string
 }) {
   const solve = useSolve()
@@ -46,16 +49,17 @@ export function ProblemRow({
           <ExternalLink className="size-3.5 shrink-0 text-fg-dim" />
         </a>
         <div className="flex flex-wrap items-center gap-1.5 text-xs text-fg-dim">
-          <span>{problem.category}</span>
-          <span aria-hidden>&middot;</span>
           <DifficultyBadge difficulty={problem.difficulty} />
           <StatusBadge status={status} overdue={overdue} />
+          <span aria-hidden>&middot;</span>
+          <span>{problem.category}</span>
           {label && status === "reviewing" && (
             <span className="tabular text-fg-dim">
-              {problem.next_review_at} &middot; {label}
+              &middot; {label} &middot; {problem.next_review_at}
             </span>
           )}
         </div>
+        <CompanyChips problemId={problem.id} companies={problem.companies} editable={editable} />
       </div>
 
       <div className="flex shrink-0 gap-2">

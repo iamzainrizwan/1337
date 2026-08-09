@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { ProblemRow } from "@/components/problem-row"
-import { CompanyTagEditor } from "@/components/company-tag-editor"
 import { ManageCompaniesDialog } from "@/components/manage-companies-dialog"
 import { AddProblemDialog } from "@/components/add-problem-dialog"
 import { cn } from "@/lib/utils"
@@ -173,12 +172,7 @@ export default function Problems() {
               {isOpen && (
                 <CardContent className="flex flex-col gap-2">
                   {problems.map((p) => (
-                    <div key={p.id} className="flex flex-col gap-2">
-                      <ProblemRow problem={p} stageInfo={data.stage_info} />
-                      <div className="px-3">
-                        <CompanyTagEditor problemId={p.id} companies={p.companies} />
-                      </div>
-                    </div>
+                    <ProblemRow key={p.id} problem={p} stageInfo={data.stage_info} editable />
                   ))}
                 </CardContent>
               )}
