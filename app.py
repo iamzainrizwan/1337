@@ -220,6 +220,19 @@ def row_to_dict(row):
     return dict(row) if row is not None else None
 
 
+
+# Personal deferral (2026-08, Sept 1 internship-application push): Math &
+# Geometry / Bit Manipulation categories and any Hard-difficulty core
+# problem are lower-yield for internship interviews and cost more
+# solve-time per problem than the flat pacing math accounts for, so
+# starting a *new* one of these is deferred until after applications are
+# in -- see ~/vault/projects/1337.md for the full reasoning. This only
+# blocks starting new deferred problems; one already started/mastered
+# keeps counting normally (no reason to abandon progress already made on
+# it). To end the deferral, delete this constant and its usages below.
+IN_SCOPE_SQL = "p.category NOT IN ('Math & Geometry', 'Bit Manipulation') AND p.difficulty != 'Hard'"
+
+
 def get_pacing():
     """Deadline-based dynamic replan: how many core problems still need a
     first pass, and what rate that requires from today onward, recomputed
@@ -227,7 +240,15 @@ def get_pacing():
     db = get_db()
     start_date = date.fromisoformat(get_setting("goal_start_date", today_str()))
     target_date = date.fromisoformat(get_setting("target_date", today_str()))
-    target_count = db.execute("SELECT COUNT(*) FROM problems WHERE pool = 'core'").fetchone()[0]
+    total_core = db.execute("SELECT COUNT(*) FROM problems WHERE pool = 'core'").fetchone()[0]
+
+    deferred_unstarted = db.execute(f"""
+        SELECT COUNT(*) FROM problems p
+        LEFT JOIN progress pr ON pr.problem_id = p.id
+        WHERE p.pool = 'core' AND (pr.status IS NULL OR pr.status = 'not_started')
+          AND NOT ({IN_SCOPE_SQL})
+    """).fetchone()[0]
+    target_count = total_core - deferred_unstarted
 
     actual_started = db.execute("""
         SELECT COUNT(*) FROM progress pr JOIN problems p ON p.id = pr.problem_id
@@ -277,10 +298,10 @@ def get_suggested_new_problems(count):
     if count <= 0:
         return []
     db = get_db()
-    return db.execute("""
+    return db.execute(f"""
         SELECT p.* FROM problems p
         LEFT JOIN progress pr ON pr.problem_id = p.id
-        WHERE p.pool = 'core' AND (pr.status IS NULL OR pr.status = 'not_started')
+        WHERE p.pool = 'core' AND (pr.status IS NULL OR pr.status = 'not_started') AND {IN_SCOPE_SQL}
         ORDER BY p.order_index ASC
         LIMIT ?
     """, (count,)).fetchall()
