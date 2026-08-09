@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useAddProblem } from "@/hooks/use-api"
 
-const EMPTY = { name: "", url: "", category: "", difficulty: "Medium", company_tag: "" }
+const EMPTY = { name: "", url: "", category: "", difficulty: "Medium" }
 
 export function AddProblemDialog() {
   const [open, setOpen] = useState(false)
@@ -84,15 +84,6 @@ export function AddProblemDialog() {
                 <SelectItem value="Hard">Hard</SelectItem>
               </SelectContent>
             </Select>
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="p-tag">Company tag (optional)</Label>
-            <Input
-              id="p-tag"
-              value={form.company_tag}
-              onChange={(e) => setForm((f) => ({ ...f, company_tag: e.target.value }))}
-              placeholder="Google, Meta"
-            />
           </div>
         </div>
         <DialogFooter>

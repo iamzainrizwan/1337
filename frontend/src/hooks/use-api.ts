@@ -13,6 +13,10 @@ export function useStats() {
   return useQuery({ queryKey: ["stats"], queryFn: api.stats })
 }
 
+export function useCompanies() {
+  return useQuery({ queryKey: ["companies"], queryFn: api.companies })
+}
+
 export function useBackfillCandidates() {
   return useQuery({ queryKey: ["backfill-candidates"], queryFn: api.backfillCandidates })
 }
@@ -56,12 +60,46 @@ export function useAddProblem() {
   })
 }
 
-export function useUpdateTags() {
+export function useCreateCompany() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, company_tags }: { id: number; company_tags: string }) =>
-      api.updateTags(id, company_tags),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["problems"] }),
+    mutationFn: api.createCompany,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["companies"] }),
+  })
+}
+
+export function useDeleteCompany() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: api.deleteCompany,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["companies"] })
+      qc.invalidateQueries({ queryKey: ["problems"] })
+    },
+  })
+}
+
+export function useTagProblemCompany() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ problemId, companyId }: { problemId: number; companyId: number }) =>
+      api.tagProblemCompany(problemId, companyId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["problems"] })
+      qc.invalidateQueries({ queryKey: ["companies"] })
+    },
+  })
+}
+
+export function useUntagProblemCompany() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ problemId, companyId }: { problemId: number; companyId: number }) =>
+      api.untagProblemCompany(problemId, companyId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["problems"] })
+      qc.invalidateQueries({ queryKey: ["companies"] })
+    },
   })
 }
 

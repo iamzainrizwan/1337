@@ -5,7 +5,7 @@ from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 from flask import Flask, g, jsonify, request, send_from_directory
 
-from problems_data import NEETCODE_250, CORE_150_URLS
+from problems_data import NEETCODE_250, CORE_150_URLS, COMPANY_TAGS_SEED
 import digest
 
 DB_PATH = "/data/tracker.db"
@@ -93,8 +93,40 @@ def init_db():
     cols = [r[1] for r in db.execute("PRAGMA table_info(problems)").fetchall()]
     if "pool" not in cols:
         db.execute("ALTER TABLE problems ADD COLUMN pool TEXT NOT NULL DEFAULT 'core'")
-    if "company_tags" not in cols:
-        db.execute("ALTER TABLE problems ADD COLUMN company_tags TEXT")
+
+    db.execute("""
+        CREATE TABLE IF NOT EXISTS companies (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL UNIQUE COLLATE NOCASE
+        )
+    """)
+    db.execute("""
+        CREATE TABLE IF NOT EXISTS problem_companies (
+            problem_id INTEGER NOT NULL,
+            company_id INTEGER NOT NULL,
+            PRIMARY KEY (problem_id, company_id),
+            FOREIGN KEY (problem_id) REFERENCES problems(id),
+            FOREIGN KEY (company_id) REFERENCES companies(id)
+        )
+    """)
+
+    # one-off migration: the old free-text company_tags column predates the
+    # normalized companies/problem_companies tables above -- split it into
+    # rows once, then drop it, so it can never drift out of sync with them.
+    if "company_tags" in cols:
+        for row in db.execute(
+            "SELECT id, company_tags FROM problems WHERE company_tags IS NOT NULL AND company_tags != ''"
+        ).fetchall():
+            for name in {t.strip() for t in row["company_tags"].split(",") if t.strip()}:
+                db.execute("INSERT OR IGNORE INTO companies (name) VALUES (?)", (name,))
+                company_id = db.execute(
+                    "SELECT id FROM companies WHERE name = ? COLLATE NOCASE", (name,)
+                ).fetchone()["id"]
+                db.execute(
+                    "INSERT OR IGNORE INTO problem_companies (problem_id, company_id) VALUES (?, ?)",
+                    (row["id"], company_id),
+                )
+        db.execute("ALTER TABLE problems DROP COLUMN company_tags")
 
     order_index = 0
     for category, problems in NEETCODE_250:
@@ -112,6 +144,25 @@ def init_db():
                     VALUES (?, ?, ?, ?, ?, ?)
                 """, (name, category, difficulty, link, order_index, pool))
             order_index += 1
+
+    # Company tags: seeded once from a community-compiled dataset (see
+    # problems_data.py), then fully user-managed via the companies API --
+    # never re-applied, so it won't clobber tags the user has since edited.
+    if db.execute("SELECT 1 FROM settings WHERE key = 'company_tags_seeded'").fetchone() is None:
+        for link, names in COMPANY_TAGS_SEED.items():
+            problem = db.execute("SELECT id FROM problems WHERE url = ?", (link,)).fetchone()
+            if not problem:
+                continue
+            for name in {t.strip() for t in names.split(",") if t.strip()}:
+                db.execute("INSERT OR IGNORE INTO companies (name) VALUES (?)", (name,))
+                company_id = db.execute(
+                    "SELECT id FROM companies WHERE name = ? COLLATE NOCASE", (name,)
+                ).fetchone()["id"]
+                db.execute(
+                    "INSERT OR IGNORE INTO problem_companies (problem_id, company_id) VALUES (?, ?)",
+                    (problem["id"], company_id),
+                )
+        db.execute("INSERT INTO settings (key, value) VALUES ('company_tags_seeded', '1')")
 
     # Timezone: seeded from the container's TZ env var, freely editable
     # afterward via POST /api/settings/timezone.
@@ -414,6 +465,20 @@ def api_dashboard():
     })
 
 
+def _companies_by_problem(db):
+    rows = db.execute("""
+        SELECT pc.problem_id, c.id, c.name
+        FROM problem_companies pc
+        JOIN companies c ON c.id = pc.company_id
+    """).fetchall()
+    by_problem = {}
+    for r in rows:
+        by_problem.setdefault(r["problem_id"], []).append({"id": r["id"], "name": r["name"]})
+    for companies in by_problem.values():
+        companies.sort(key=lambda c: c["name"].lower())
+    return by_problem
+
+
 @app.route("/api/problems")
 def api_problems():
     db = get_db()
@@ -425,7 +490,11 @@ def api_problems():
         WHERE (? = 'all' OR p.pool = ?)
         ORDER BY p.order_index ASC
     """, (pool_filter, pool_filter)).fetchall()
-    return jsonify({"problems": [dict(r) for r in rows], "stage_info": STAGE_INFO})
+    companies_by_problem = _companies_by_problem(db)
+    problems = [dict(r) for r in rows]
+    for p in problems:
+        p["companies"] = companies_by_problem.get(p["id"], [])
+    return jsonify({"problems": problems, "stage_info": STAGE_INFO})
 
 
 @app.route("/api/problems/add", methods=["POST"])
@@ -434,25 +503,82 @@ def api_add_problem():
     db = get_db()
     max_order = db.execute("SELECT COALESCE(MAX(order_index), 0) AS m FROM problems").fetchone()["m"]
     cur = db.execute("""
-        INSERT INTO problems (name, category, difficulty, url, order_index, pool, company_tags)
-        VALUES (?, ?, ?, ?, ?, 'custom', ?)
+        INSERT INTO problems (name, category, difficulty, url, order_index, pool)
+        VALUES (?, ?, ?, ?, ?, 'custom')
     """, (
         data["name"], data["category"], data["difficulty"], data["url"],
-        max_order + 1, data.get("company_tag") or None,
+        max_order + 1,
     ))
     db.commit()
     row = db.execute("SELECT * FROM problems WHERE id = ?", (cur.lastrowid,)).fetchone()
-    return jsonify(dict(row)), 201
+    result = dict(row)
+    result["companies"] = []
+    return jsonify(result), 201
 
 
-@app.route("/api/problems/<int:problem_id>/tags", methods=["PATCH"])
-def api_update_tags(problem_id):
+@app.route("/api/companies")
+def api_companies():
+    db = get_db()
+    rows = db.execute("""
+        SELECT c.id, c.name, COUNT(pc.problem_id) AS problem_count
+        FROM companies c
+        LEFT JOIN problem_companies pc ON pc.company_id = c.id
+        GROUP BY c.id
+        ORDER BY c.name COLLATE NOCASE
+    """).fetchall()
+    return jsonify({"companies": [dict(r) for r in rows]})
+
+
+@app.route("/api/companies", methods=["POST"])
+def api_create_company():
+    data = request.get_json(force=True)
+    name = (data.get("name") or "").strip()
+    if not name:
+        return jsonify({"error": "name is required"}), 400
+    db = get_db()
+    existing = db.execute("SELECT id, name FROM companies WHERE name = ? COLLATE NOCASE", (name,)).fetchone()
+    if existing:
+        company_id, canonical_name, status = existing["id"], existing["name"], 200
+    else:
+        cur = db.execute("INSERT INTO companies (name) VALUES (?)", (name,))
+        db.commit()
+        company_id, canonical_name, status = cur.lastrowid, name, 201
+    count = db.execute(
+        "SELECT COUNT(*) AS n FROM problem_companies WHERE company_id = ?", (company_id,)
+    ).fetchone()["n"]
+    return jsonify({"id": company_id, "name": canonical_name, "problem_count": count}), status
+
+
+@app.route("/api/companies/<int:company_id>", methods=["DELETE"])
+def api_delete_company(company_id):
+    db = get_db()
+    db.execute("DELETE FROM problem_companies WHERE company_id = ?", (company_id,))
+    db.execute("DELETE FROM companies WHERE id = ?", (company_id,))
+    db.commit()
+    return jsonify({"ok": True})
+
+
+@app.route("/api/problems/<int:problem_id>/companies", methods=["POST"])
+def api_tag_problem_company(problem_id):
     data = request.get_json(force=True)
     db = get_db()
-    db.execute("UPDATE problems SET company_tags = ? WHERE id = ?", (data.get("company_tags") or None, problem_id))
+    db.execute(
+        "INSERT OR IGNORE INTO problem_companies (problem_id, company_id) VALUES (?, ?)",
+        (problem_id, data["company_id"]),
+    )
     db.commit()
-    row = db.execute("SELECT * FROM problems WHERE id = ?", (problem_id,)).fetchone()
-    return jsonify(dict(row))
+    return jsonify({"ok": True})
+
+
+@app.route("/api/problems/<int:problem_id>/companies/<int:company_id>", methods=["DELETE"])
+def api_untag_problem_company(problem_id, company_id):
+    db = get_db()
+    db.execute(
+        "DELETE FROM problem_companies WHERE problem_id = ? AND company_id = ?",
+        (problem_id, company_id),
+    )
+    db.commit()
+    return jsonify({"ok": True})
 
 
 @app.route("/api/solve/<int:problem_id>", methods=["POST"])

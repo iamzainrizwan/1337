@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { ProblemRow } from "@/components/problem-row"
-import { TagEditor } from "@/components/tag-editor"
+import { CompanyTagEditor } from "@/components/company-tag-editor"
+import { ManageCompaniesDialog } from "@/components/manage-companies-dialog"
 import { AddProblemDialog } from "@/components/add-problem-dialog"
 import { cn } from "@/lib/utils"
 
@@ -31,7 +32,7 @@ export default function Problems() {
     if (!data) return []
     const q = search.trim().toLowerCase()
     const filtered = q
-      ? data.problems.filter((p) => (p.company_tags ?? "").toLowerCase().includes(q))
+      ? data.problems.filter((p) => p.companies.some((c) => c.name.toLowerCase().includes(q)))
       : data.problems
 
     const map = new Map<string, typeof filtered>()
@@ -64,7 +65,10 @@ export default function Problems() {
     <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="font-display text-2xl font-bold">Problems</h1>
-        <AddProblemDialog />
+        <div className="flex gap-2">
+          <ManageCompaniesDialog />
+          <AddProblemDialog />
+        </div>
       </div>
 
       <Tabs value={pool} onValueChange={setPool}>
@@ -172,7 +176,7 @@ export default function Problems() {
                     <div key={p.id} className="flex flex-col gap-2">
                       <ProblemRow problem={p} stageInfo={data.stage_info} />
                       <div className="px-3">
-                        <TagEditor id={p.id} tags={p.company_tags} />
+                        <CompanyTagEditor problemId={p.id} companies={p.companies} />
                       </div>
                     </div>
                   ))}

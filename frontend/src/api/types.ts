@@ -2,6 +2,12 @@ export type Pool = "core" | "extra" | "custom"
 export type Difficulty = "Easy" | "Medium" | "Hard"
 export type Status = "not_started" | "reviewing" | "mastered"
 
+export interface Company {
+  id: number
+  name: string
+  problem_count?: number
+}
+
 export interface Problem {
   id: number
   name: string
@@ -10,7 +16,7 @@ export interface Problem {
   url: string
   order_index: number
   pool: Pool
-  company_tags: string | null
+  companies: Company[]
   status?: Status | null
   stage?: number | null
   next_review_at?: string | null
@@ -68,6 +74,10 @@ export interface DashboardResponse {
 export interface ProblemsResponse {
   problems: Problem[]
   stage_info: StageInfo
+}
+
+export interface CompaniesResponse {
+  companies: Company[]
 }
 
 export interface ActivityDay {

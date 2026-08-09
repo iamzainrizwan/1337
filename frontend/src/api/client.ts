@@ -1,5 +1,7 @@
 import type {
   BackfillCandidatesResponse,
+  CompaniesResponse,
+  Company,
   DashboardResponse,
   DigestResponse,
   Pacing,
@@ -40,17 +42,32 @@ export const api = {
     url: string
     difficulty: string
     category: string
-    company_tag?: string
   }) =>
     request<Problem>("/problems/add", {
       method: "POST",
       body: JSON.stringify(data),
     }),
 
-  updateTags: (id: number, company_tags: string) =>
-    request<Problem>(`/problems/${id}/tags`, {
-      method: "PATCH",
-      body: JSON.stringify({ company_tags }),
+  companies: () => request<CompaniesResponse>("/companies"),
+
+  createCompany: (name: string) =>
+    request<Company>("/companies", {
+      method: "POST",
+      body: JSON.stringify({ name }),
+    }),
+
+  deleteCompany: (id: number) =>
+    request<{ ok: boolean }>(`/companies/${id}`, { method: "DELETE" }),
+
+  tagProblemCompany: (problemId: number, companyId: number) =>
+    request<{ ok: boolean }>(`/problems/${problemId}/companies`, {
+      method: "POST",
+      body: JSON.stringify({ company_id: companyId }),
+    }),
+
+  untagProblemCompany: (problemId: number, companyId: number) =>
+    request<{ ok: boolean }>(`/problems/${problemId}/companies/${companyId}`, {
+      method: "DELETE",
     }),
 
   solve: (id: number) =>
