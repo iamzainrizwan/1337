@@ -6,7 +6,7 @@ Spaced-repetition tracker for the NeetCode 150, self-hosted on alexandria. Solve
 
 The core goal is **all 150 NeetCode 150 problems mastered within 2 months**, aimed at being interview-ready for internship applications rather than maximum breadth.
 
-The pacing math accounts for the 21-day review tail: a problem solved today doesn't count as "mastered" until its 3-week review clears, so the app backs off the new-problem window early — by default it targets finishing new problems within the first ~31 days of the 60-day window, then treats the rest as review-only. The dashboard shows your actual pace against this, plus a suggested number of new problems for today (never a hard limit — just a nudge).
+The pacing math is a deadline-based dynamic replan, recomputed fresh every time you load the dashboard rather than compared against a fixed day-0 schedule: it looks at how many core problems still haven't been started and how many days are left until your target date, and divides one by the other to get today's required rate. The dashboard shows that pace, plus a suggested number of new problems for today (never a hard limit — just a nudge, capped at whatever's actually left to start). If the required rate climbs past 8 new problems/day, it's flagged as unrealistic rather than quietly suggested.
 
 Want a different timeframe? Set `GOAL_TARGET_DAYS` in your environment (defaults to 60).
 
