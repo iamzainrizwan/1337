@@ -777,6 +777,15 @@ def api_digest_send_now():
     return jsonify({"ok": True})
 
 
+@app.route("/api/health")
+def api_health():
+    try:
+        get_db().execute("SELECT 1")
+    except sqlite3.Error as e:
+        return jsonify({"ok": False, "error": str(e)}), 503
+    return jsonify({"ok": True})
+
+
 @app.route("/", defaults={"path": ""})
 @app.route("/<path:path>")
 def serve_spa(path):
