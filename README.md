@@ -1,5 +1,7 @@
 # 1337
 
+> **heads up:** this one's mostly vibecoded with claude. it's a tool i actually use daily, not a portfolio piece - [ledgr](https://github.com/iamzainrizwan/ledgr) and [s3ntry](https://github.com/iamzainrizwan/s3ntry) are those.
+
 Spaced-repetition tracker for the NeetCode 150, self-hosted on alexandria. Solve a problem, then get nudged to review it at day 1, week 1, and week 3 — with a daily email telling you what's due. The NeetCode 250's extra ~100 problems are kept as an optional bonus pool, not part of the goal.
 
 ## The goal
