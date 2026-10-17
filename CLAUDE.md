@@ -71,3 +71,9 @@ The app's "day" runs 3am-3am (`DAY_START_HOUR` in `app.py`) rather than midnight
 The daily email is an in-process APScheduler cron job started at import time (`start_scheduler()`), not a separate cron container. **This is why the container must run gunicorn with exactly one worker** (`--workers 1` in the Dockerfile) — multiple workers would each start their own scheduler and send duplicate emails. If more concurrency is ever needed, the intended fix is to move scheduling to an external trigger hitting `POST /api/digest/send-now`, not to add workers.
 
 Digest send is a no-op (with a log line) if `RESEND_API_KEY` or `DIGEST_TO_EMAIL` isn't set — the rest of the app works fine without email configured.
+
+## Data safety
+
+`data/tracker.db` is tracked in git and bind-mounted from the checkout on alexandria.
+Back up the live DB before untracking or resetting it; `git reset --hard` overwrites
+progress. No Claude attribution in commits here either.
